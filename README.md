@@ -102,8 +102,8 @@ git push -u origin main
 | Region | closest to you |
 | Branch | main |
 | Root Directory | *(leave blank — repo root)* |
-| Build Command | `cd frontend && npm install && npm run build && cd ../backend && npm install` |
-| Start Command | `cd backend && npm start` (or `node server.js`, match your `package.json`) |
+| Build Command | `cd frontend && npm install --include=dev && npm run build && cd ../backend && npm install` |
+| Start Command | `node backend/server.js` |
 | Instance Type | Free (or paid, as needed) |
 
 4. Go to **Environment** tab → add these variables:
