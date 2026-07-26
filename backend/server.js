@@ -53,7 +53,21 @@ app.use(express.urlencoded({ extended: true }));
 if (process.env.NODE_ENV === 'development') app.use(morgan('dev'));
 
 // ─── Static Files (Frontend — React build output) ────────────────────────────
-app.use(express.static(path.join(__dirname, '../frontend/dist')));
+// Vite renames JS/CSS with a content hash on every build (e.g. index-ABC123.js).
+// Those hashed files are safe to cache forever. index.html is NOT hashed, so it
+// must never be cached — otherwise browsers keep an old index.html that points
+// to JS/CSS filenames from a previous build, which no longer exist -> 404s and
+// missing styles right after a redeploy.
+app.use(express.static(path.join(__dirname, '../frontend/dist'), {
+  index: false, // don't auto-serve index.html here; the catch-all below does it with no-cache
+  setHeaders: (res, filePath) => {
+    if (filePath.includes(`${path.sep}assets${path.sep}`)) {
+      res.setHeader('Cache-Control', 'public, max-age=31536000, immutable');
+    } else {
+      res.setHeader('Cache-Control', 'no-cache');
+    }
+  },
+}));
 
 // ─── API Routes ───────────────────────────────────────────────────────────────
 app.use('/api/auth', authRoutes);
@@ -65,6 +79,7 @@ app.use('/api/admin', adminRoutes);
 // ─── Frontend Routes (SPA fallback) ──────────────────────────────────────────
 app.get('*', (req, res) => {
   if (!req.path.startsWith('/api')) {
+    res.setHeader('Cache-Control', 'no-cache');
     res.sendFile(path.join(__dirname, '../frontend/dist/index.html'));
   }
 });
