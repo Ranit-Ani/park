@@ -105,6 +105,23 @@ export default function Landing() {
           </div>
         </div>
       </section>
+
+      <footer className="pub-footer">
+        <div className="pub-footer-top">
+          <div className="pub-footer-brand">
+            <div className="nav-logo"><i className="bi bi-p-square-fill" /></div>
+            SMART CAMPUS CAR-PARKING
+          </div>
+          <div className="pub-footer-links">
+            <Link to="/login">Sign In</Link>
+            <Link to="/register">Register</Link>
+          </div>
+        </div>
+        <div className="pub-footer-bottom">
+          <span>&copy; {new Date().getFullYear()} Smart Campus Car-Parking System. All rights reserved.</span>
+          <span className="pub-footer-credit">Built by Ranit Pramanick</span>
+        </div>
+      </footer>
     </>
   );
 }
