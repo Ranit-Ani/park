@@ -14,7 +14,7 @@ class StaffService {
    * @param {string} bookingId
    * @returns {Promise<Booking>}
    */
-  async checkIn(bookingId, carNumber) {
+  async checkIn(bookingId, carNumber, vehicleType) {
     const booking = await Booking.findById(bookingId).populate('slotId');
     if (!booking) {
       const err = new Error('Booking not found.');
@@ -32,6 +32,7 @@ class StaffService {
     booking.status = 'Active';
     booking.checkInTime = new Date();
     if (carNumber) booking.carNumber = carNumber.trim().toUpperCase();
+    if (vehicleType) booking.vehicleType = vehicleType;
     await booking.save();
 
     // Update slot status to Occupied
