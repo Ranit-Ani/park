@@ -1,0 +1,11 @@
+services:
+  - type: web
+    name: campus-parking
+    env: node
+    region: singapore
+    plan: free
+    buildCommand: cd frontend && npm install && npm run build && cd ../backend && npm install
+    startCommand: node backend/server.js
+    envVars:
+      - key: NODE_ENV
+        value: production

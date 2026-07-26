@@ -1,0 +1,12 @@
+{
+  "name": "campus-parking-system",
+  "version": "1.0.0",
+  "description": "Smart Campus Car Parking System",
+  "scripts": {
+    "start": "node backend/server.js",
+    "build": "cd frontend && npm install && npm run build && cd ../backend && npm install"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  }
+}

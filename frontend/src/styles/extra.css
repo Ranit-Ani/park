@@ -1,0 +1,171 @@
+/* ══════════════════════════════════════════════════════════════
+   EXTRA STYLES — OTP inputs, custom modal system, register steps
+   (migrated from inline <style> blocks in the original HTML pages)
+══════════════════════════════════════════════════════════════ */
+
+/* ══════════════════════════════════════════════════════════════
+   COMPATIBILITY ALIASES
+   Some pages (admin/staff) reference a --neon-x / --text-x naming
+   scheme instead of the core --plasma/--t2 tokens above. Alias them
+   here so every page renders with consistent, intended colors.
+══════════════════════════════════════════════════════════════ */
+:root {
+  --neon-cyan: var(--plasma);
+  --neon-blue: var(--pulse);
+  --neon-green: var(--aurora);
+  --neon-orange: var(--solar);
+  --neon-red: var(--nova);
+  --neon-purple: var(--nebula);
+  --text-muted: var(--t2);
+  --text-dim: var(--t3);
+  --font-orbit: 'Exo 2', sans-serif;
+}
+.text-green { color: var(--aurora) !important; }
+.text-cyan { color: var(--plasma) !important; }
+.text-orange { color: var(--solar) !important; }
+
+.otp-row {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: .45rem;
+  width: 100%;
+  box-sizing: border-box;
+  flex-wrap: nowrap;
+}
+
+.otp-digit {
+  flex: 1 1 0;
+  min-width: 0;
+  max-width: 46px;
+  aspect-ratio: 1 / 1;
+  text-align: center;
+  font-size: 1.15rem;
+  font-weight: 700;
+  font-family: 'Syne', sans-serif;
+  background: rgba(0, 240, 255, .04);
+  border: 1.5px solid rgba(0, 240, 255, .25);
+  border-radius: 8px;
+  color: #fff;
+  caret-color: var(--plasma, #00f0ff);
+  transition: border-color .2s, box-shadow .2s;
+  outline: none;
+  padding: 0;
+}
+
+.otp-digit:focus {
+  border-color: var(--plasma, #00f0ff);
+  box-shadow: 0 0 0 3px rgba(0, 240, 255, .15);
+  background: rgba(0, 240, 255, .07);
+}
+
+.otp-digit.filled {
+  border-color: rgba(0, 240, 255, .55);
+}
+
+.otp-label {
+  font-size: .76rem;
+  color: var(--t2, rgba(255, 255, 255, .55));
+  font-family: 'Syne', sans-serif;
+  letter-spacing: .07em;
+  margin-bottom: .5rem;
+  display: block;
+}
+
+/* ── Register: step indicator + password strength ───────────── */
+.step { display: none; }
+.step.active { display: block; }
+.step-indicator { display: flex; gap: .5rem; justify-content: center; margin-bottom: 1.6rem; }
+.step-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--t4); transition: .3s; }
+.step-dot.done { background: var(--aurora); }
+.step-dot.active { background: var(--plasma); box-shadow: 0 0 12px rgba(0, 240, 255, .5); width: 24px; border-radius: 4px; }
+.pwd-strength { height: 3px; border-radius: 2px; margin-top: .4rem; transition: all .3s; background: var(--t4); }
+
+/* ══════════════════════════════════════════════════════════════
+   Custom React Modal (replaces Bootstrap's bootstrap.Modal JS)
+══════════════════════════════════════════════════════════════ */
+.ag-modal-backdrop {
+  position: fixed; inset: 0; z-index: 1050;
+  background: rgba(2, 4, 10, .72);
+  backdrop-filter: blur(6px);
+  display: flex; align-items: center; justify-content: center;
+  padding: 1rem;
+  animation: agModalFade .18s ease;
+}
+@keyframes agModalFade { from { opacity: 0; } to { opacity: 1; } }
+
+.ag-modal-dialog {
+  width: 100%;
+  max-width: 480px;
+  animation: agModalPop .2s ease;
+}
+.ag-modal-dialog.sm { max-width: 380px; }
+
+@keyframes agModalPop {
+  from { opacity: 0; transform: translateY(14px) scale(.98); }
+  to   { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+.ag-modal-content {
+  background: var(--card, #0b1929);
+  border: 1px solid rgba(0, 240, 255, .18);
+  border-radius: 16px;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, .6), 0 0 40px rgba(0, 240, 255, .08);
+  overflow: hidden;
+}
+
+.ag-modal-header {
+  display: flex; align-items: center; justify-content: space-between;
+  border-bottom: 1px solid rgba(0, 240, 255, .12);
+  padding: 1rem 1.25rem .9rem;
+}
+
+.ag-modal-title {
+  font-family: 'Syne', sans-serif;
+  font-size: .95rem;
+  letter-spacing: .07em;
+  color: var(--plasma, #00f0ff);
+  display: flex; align-items: center; gap: .5rem;
+  margin: 0;
+}
+
+.ag-modal-close {
+  background: none; border: none; color: rgba(255, 255, 255, .5);
+  font-size: 1.3rem; cursor: pointer; line-height: 1; padding: .2rem;
+  transition: color .15s;
+}
+.ag-modal-close:hover { color: #fff; }
+
+.ag-modal-body { padding: 1.25rem; color: var(--t1); }
+
+.ag-modal-footer {
+  display: flex; justify-content: flex-end; gap: .6rem;
+  padding: 1rem 1.25rem; border-top: 1px solid rgba(0, 240, 255, .08);
+}
+
+/* Misc form select used across admin pages */
+.ag-select {
+  width: 100%;
+  background: rgba(0, 240, 255, .04);
+  border: 1.5px solid rgba(0, 240, 255, .18);
+  border-radius: 10px;
+  color: var(--t1);
+  padding: .6rem .9rem;
+  font-size: .85rem;
+  font-family: 'DM Sans', sans-serif;
+  outline: none;
+}
+.ag-select:focus { border-color: var(--plasma); }
+
+.spinner-border-sm {
+  display: inline-block;
+  width: .85rem; height: .85rem;
+  border: .15em solid currentColor;
+  border-right-color: transparent;
+  border-radius: 50%;
+  animation: agSpin .65s linear infinite;
+  vertical-align: -0.15em;
+}
+@keyframes agSpin { to { transform: rotate(360deg); } }
+
+.font-mono { font-family: 'DM Sans', monospace; letter-spacing: 0.02em; }
