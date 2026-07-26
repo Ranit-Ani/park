@@ -8,7 +8,7 @@ class StaffController {
   // POST /api/staff/checkin/:bookingId
   async checkIn(req, res, next) {
     try {
-      const booking = await StaffService.checkIn(req.params.bookingId, req.body.carNumber);
+      const booking = await StaffService.checkIn(req.params.bookingId);
       res.json({
         success: true,
         message: `Check-in successful for slot ${booking.slotId.slotNumber}.`,

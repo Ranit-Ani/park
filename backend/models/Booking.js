@@ -24,12 +24,6 @@ const BookingSchema = new mongoose.Schema(
       type: Date,
       default: null,
     },
-    carNumber: {
-      type: String,
-      trim: true,
-      uppercase: true,
-      default: null,
-    },
     checkOutTime: {
       type: Date,
       default: null,
