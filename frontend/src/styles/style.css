@@ -399,7 +399,7 @@ h1,h2,h3,h4,h5,h6{font-family:'Exo 2',sans-serif;letter-spacing:.02em;color:var(
 .hero-title{font-family:'Exo 2',sans-serif;font-size:clamp(1.9rem,4.5vw,3.3rem);font-weight:900;line-height:1.1;letter-spacing:.03em;margin-bottom:1.1rem;animation:fadeUp .65s .1s ease both}
 .hero-sub{font-size:.98rem;color:var(--t2);max-width:520px;margin:0 auto 2.3rem;line-height:1.75;animation:fadeUp .65s .2s ease both}
 .hero-actions{display:flex;gap:.9rem;justify-content:center;flex-wrap:wrap;animation:fadeUp .65s .3s ease both}
-.feature-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:1.1rem;max-width:980px;margin:4rem auto;padding:0 1.5rem}
+.feature-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:1.1rem;max-width:980px;margin:4rem auto 0;padding:0 1.5rem}
 .feature-card{background:var(--card);border:1px solid var(--t4);border-radius:var(--r-card);padding:1.65rem;text-align:center;transition:all .3s;animation:riseIn .5s ease forwards}
 .feature-card:hover{transform:translateY(-6px);border-color:rgba(0,240,255,.15);box-shadow:var(--shadow-float)}
 .feature-icon{width:58px;height:58px;border-radius:16px;display:flex;align-items:center;justify-content:center;font-size:1.4rem;margin:0 auto 1.2rem}

@@ -71,7 +71,7 @@ export default function Landing() {
         </div>
       </section>
 
-      <section style={{ position: 'relative', zIndex: 1, paddingBottom: '6rem' }}>
+      <section style={{ position: 'relative', zIndex: 1, paddingBottom: '1rem' }}>
         <div className="feature-grid">
           <div className="feature-card s1">
             <div className="feature-icon" style={{ background: 'rgba(0,240,255,.08)', color: 'var(--plasma)' }}><i className="bi bi-broadcast-pin" /></div>
