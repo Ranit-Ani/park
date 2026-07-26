@@ -15,7 +15,6 @@ export default function StaffDashboard() {
   const [bill, setBill] = useState(null);
   const [ciTarget, setCiTarget] = useState(null); // booking pending check-in
   const [carNumber, setCarNumber] = useState('');
-  const [vehicleType, setVehicleType] = useState('4-Wheeler');
 
   const load = useCallback(async () => {
     const [s, bk] = await Promise.all([apiRequest('/slots/stats'), apiRequest('/staff/bookings')]);
@@ -45,19 +44,14 @@ export default function StaffDashboard() {
 
   function openCheckIn(booking) {
     setCarNumber('');
-    setVehicleType('4-Wheeler');
     setCiTarget(booking);
   }
 
   async function submitCheckIn() {
     if (!ciTarget) return;
-    if (!carNumber.trim()) {
-      showToast('Please enter the vehicle number.', 'danger');
-      return;
-    }
     const d = await apiRequest('/staff/checkin/' + ciTarget._id, {
       method: 'POST',
-      body: { carNumber, vehicleType },
+      body: { carNumber },
     });
     if (d && d.success) {
       showToast('Check-in: Slot ' + d.data.slotId?.slotNumber, 'success');
@@ -106,7 +100,7 @@ export default function StaffDashboard() {
                   <td>{formatDateTime(b.bookingTime)}</td>
                   <td>
                     {b.checkInTime ? formatDateTime(b.checkInTime) : <span style={{ color: 'var(--text-dim)' }}>—</span>}
-                    {b.carNumber && <><br /><small style={{ color: 'var(--neon-orange)', fontFamily: 'monospace' }}>{b.carNumber}{b.vehicleType ? ` · ${b.vehicleType}` : ''}</small></>}
+                    {b.carNumber && <><br /><small style={{ color: 'var(--neon-orange)', fontFamily: 'monospace' }}>{b.carNumber}</small></>}
                   </td>
                   <td><StatusBadge status={b.status} /></td>
                   <td>
@@ -142,15 +136,6 @@ export default function StaffDashboard() {
               onChange={(e) => setCarNumber(e.target.value.toUpperCase())}
               onKeyDown={(e) => { if (e.key === 'Enter') submitCheckIn(); }}
             />
-            <div style={{ marginTop: '0.75rem' }}>
-              <label className="ag-label">Vehicle Type</label>
-              <select className="ag-select" value={vehicleType} onChange={(e) => setVehicleType(e.target.value)}>
-                <option value="2-Wheeler">2-Wheeler (Bike / Scooter)</option>
-                <option value="3-Wheeler">3-Wheeler (Auto)</option>
-                <option value="4-Wheeler">4-Wheeler (Car)</option>
-                <option value="Other">Other (Truck / Van / etc.)</option>
-              </select>
-            </div>
           </>
         )}
       </Modal>

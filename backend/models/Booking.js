@@ -30,11 +30,6 @@ const BookingSchema = new mongoose.Schema(
       uppercase: true,
       default: null,
     },
-    vehicleType: {
-      type: String,
-      enum: ['2-Wheeler', '3-Wheeler', '4-Wheeler', 'Other'],
-      default: null,
-    },
     checkOutTime: {
       type: Date,
       default: null,

@@ -12,8 +12,6 @@ export default function CheckIn() {
   const [alert, setAlert] = useState({ message: '', type: 'info' });
   const [sel, setSel] = useState(null);
   const [busy, setBusy] = useState(false);
-  const [carNumber, setCarNumber] = useState('');
-  const [vehicleType, setVehicleType] = useState('4-Wheeler');
 
   const load = useCallback(async () => {
     const d = await apiRequest('/staff/bookings/all?status=Booked');
@@ -34,15 +32,8 @@ export default function CheckIn() {
 
   async function confirmCheckIn() {
     if (!sel) return;
-    if (!carNumber.trim()) {
-      setAlert({ message: 'Please enter the vehicle number before confirming.', type: 'danger' });
-      return;
-    }
     setBusy(true);
-    const d = await apiRequest('/staff/checkin/' + sel._id, {
-      method: 'POST',
-      body: { carNumber, vehicleType },
-    });
+    const d = await apiRequest('/staff/checkin/' + sel._id, { method: 'POST' });
     setBusy(false);
     setSel(null);
     if (d && d.success) load();
@@ -71,7 +62,7 @@ export default function CheckIn() {
                   <td>{b.slotId?.location || '—'}</td>
                   <td>{formatDate(b.scheduledDate)}</td>
                   <td>{formatDateTime(b.bookingTime)}</td>
-                  <td><button className="btn-ag green sm" onClick={() => { setCarNumber(''); setVehicleType('4-Wheeler'); setSel(b); }}><i className="bi bi-box-arrow-in-right" /> Check In</button></td>
+                  <td><button className="btn-ag green sm" onClick={() => setSel(b)}><i className="bi bi-box-arrow-in-right" /> Check In</button></td>
                 </tr>
               ))}
             </tbody>
@@ -102,32 +93,9 @@ export default function CheckIn() {
                 <tr><td>Slot</td><td style={{ color: 'var(--neon-cyan)', fontWeight: 700 }}>{sel.slotId?.slotNumber}</td></tr>
                 <tr><td>Location</td><td>{sel.slotId?.location}</td></tr>
                 <tr><td>Rate</td><td>₹{sel.slotId?.hourlyRate}/hour</td></tr>
-                <tr><td>Check-In Time</td><td style={{ color: 'var(--neon-green)' }}>{new Date().toLocaleString('en-IN', { timeZone: 'Asia/Kolkata' })}</td></tr>
+                <tr><td>Check-In Time</td><td style={{ color: 'var(--neon-green)' }}>{new Date().toLocaleString('en-IN')}</td></tr>
               </tbody>
             </table>
-
-            <div style={{ marginTop: '1rem' }}>
-              <label className="ag-label">Vehicle Number Plate *</label>
-              <input
-                className="ag-input"
-                type="text"
-                autoFocus
-                placeholder="e.g. KA01AB1234"
-                value={carNumber}
-                onChange={(e) => setCarNumber(e.target.value.toUpperCase())}
-              />
-            </div>
-
-            <div style={{ marginTop: '0.75rem' }}>
-              <label className="ag-label">Vehicle Type</label>
-              <select className="ag-select" value={vehicleType} onChange={(e) => setVehicleType(e.target.value)}>
-                <option value="2-Wheeler">2-Wheeler (Bike / Scooter)</option>
-                <option value="3-Wheeler">3-Wheeler (Auto)</option>
-                <option value="4-Wheeler">4-Wheeler (Car)</option>
-                <option value="Other">Other (Truck / Van / etc.)</option>
-              </select>
-            </div>
-
             <div className="ag-alert info" style={{ marginTop: '1rem', marginBottom: 0, fontSize: '0.8rem' }}>
               <i className="bi bi-arrow-right-circle" /> Status will change: Booked → Occupied
             </div>
