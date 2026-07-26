@@ -31,6 +31,37 @@ export function clearSession() {
 }
 
 /**
+ * downloadFile(endpoint, filename)
+ * For binary responses (like PDF receipts) that apiRequest can't handle
+ * since it always expects JSON. Fetches with the auth header, then
+ * triggers a normal browser file-save via a temporary link.
+ */
+export async function downloadFile(endpoint, filename) {
+  const token = getToken();
+  try {
+    const res = await fetch(API_BASE + endpoint, {
+      headers: token ? { Authorization: 'Bearer ' + token } : {},
+    });
+    if (!res.ok) {
+      const body = await res.json().catch(() => null);
+      return { success: false, message: body?.message || 'Download failed.' };
+    }
+    const blob = await res.blob();
+    const url = window.URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = filename;
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    window.URL.revokeObjectURL(url);
+    return { success: true };
+  } catch (err) {
+    console.error('Download:', endpoint, err);
+    return { success: false, message: 'Download failed.' };
+  }
+}
+/**
  * apiRequest(endpoint, options)
  * - Automatically attaches JSON content-type + bearer token
  * - Serializes object bodies to JSON

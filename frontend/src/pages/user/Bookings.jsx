@@ -3,7 +3,7 @@ import Layout from '../../components/Layout';
 import Alert from '../../components/Alert';
 import Modal from '../../components/Modal';
 import { StatusBadge, EmptyState } from '../../components/Bits';
-import { apiRequest } from '../../lib/api';
+import { apiRequest, downloadFile } from '../../lib/api';
 import { formatDate, formatDateTime } from '../../lib/utils';
 import { showToast } from '../../lib/toast';
 import { getSocket } from '../../lib/socket';
@@ -45,6 +45,12 @@ export default function UserBookings() {
     else showToast(d?.message || 'Failed.', 'danger');
   }
 
+  async function downloadReceipt(booking) {
+    const filename = `receipt-${booking._id.slice(-8).toUpperCase()}.pdf`;
+    const res = await downloadFile(`/bookings/${booking._id}/receipt`, filename);
+    if (!res.success) showToast(res.message || 'Could not download receipt.', 'danger');
+  }
+
   const rows = filter === 'all' ? all : all.filter((b) => b.status === filter);
 
   return (
@@ -74,7 +80,12 @@ export default function UserBookings() {
                   <td><StatusBadge status={b.status} /></td>
                   <td>
                     {b.status === 'Booked' && <button className="btn-ag red sm" onClick={() => cancel(b._id)}>Cancel</button>}
-                    {b.status === 'Completed' && <button className="btn-ag ghost sm" onClick={() => setBill(b)}><i className="bi bi-receipt" /></button>}
+                    {b.status === 'Completed' && (
+                      <>
+                        <button className="btn-ag ghost sm" onClick={() => setBill(b)}><i className="bi bi-receipt" /></button>{' '}
+                        <button className="btn-ag cyan sm" onClick={() => downloadReceipt(b)}><i className="bi bi-file-earmark-pdf" /> PDF</button>
+                      </>
+                    )}
                   </td>
                 </tr>
               ))}
@@ -83,7 +94,13 @@ export default function UserBookings() {
         </div>
       </div>
 
-      <Modal show={!!bill} onClose={() => setBill(null)} title="Billing Receipt" icon="bi-receipt">
+      <Modal
+        show={!!bill}
+        onClose={() => setBill(null)}
+        title="Billing Receipt"
+        icon="bi-receipt"
+        footer={bill && <button className="btn-ag cyan full" onClick={() => downloadReceipt(bill)}><i className="bi bi-file-earmark-pdf" /> Download PDF</button>}
+      >
         {bill && (
           <>
             <div className="bill-receipt">

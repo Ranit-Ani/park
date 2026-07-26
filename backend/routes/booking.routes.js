@@ -9,6 +9,7 @@ router.use(protect);
 router.post('/', authorize('user', 'admin'), bookingValidator, bookingController.createBooking);
 router.get('/', bookingController.getMyBookings);
 router.get('/:id', bookingController.getBookingById);
+router.get('/:id/receipt', bookingController.downloadReceipt);
 router.delete('/:id', authorize('user', 'admin'), bookingController.cancelBooking);
 
 module.exports = router;
