@@ -445,7 +445,7 @@ h1,h2,h3,h4,h5,h6{font-family:'Exo 2',sans-serif;letter-spacing:.02em;color:var(
 @keyframes shimmer{from{left:-100%}to{left:100%}}
 
 /* ── Stagger delays ───────────────────────────────────────────── */
-.s1{animation-delay:.05s}.s2{animation-delay:.1s}.s3{animation-delay:.15s}.s4{animation-delay:.2s}
+.s1{animation-delay:.05s}.s2{animation-delay:.1s}.s3{animation-delay:.15s}.s4{animation-delay:.2s}.s5{animation-delay:.25s}.s6{animation-delay:.3s}
 
 /* ── Utility ──────────────────────────────────────────────────── */
 .t-plasma{color:var(--plasma)!important}.t-aurora{color:var(--aurora)!important}.t-nova{color:var(--nova)!important}.t-solar{color:var(--solar)!important}.t-muted{color:var(--t2)!important}.font-orbit{font-family:'Exo 2',sans-serif}.font-syne{font-family:'Syne',sans-serif}

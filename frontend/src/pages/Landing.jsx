@@ -93,6 +93,16 @@ export default function Landing() {
             <h5 style={{ fontFamily: "'Exo 2',sans-serif", fontSize: '.88rem', letterSpacing: '.05em', marginBottom: '.5rem' }}>Full Profile Control</h5>
             <p style={{ fontSize: '.82rem', color: 'var(--t2)', lineHeight: 1.65 }}>Avatar, email change (OTP verified), password, account deletion.</p>
           </div>
+          <div className="feature-card s5">
+            <div className="feature-icon" style={{ background: 'rgba(255,71,87,.08)', color: '#ff4757' }}><i className="bi bi-clock-history" /></div>
+            <h5 style={{ fontFamily: "'Exo 2',sans-serif", fontSize: '.88rem', letterSpacing: '.05em', marginBottom: '.5rem' }}>Full Booking History</h5>
+            <p style={{ fontSize: '.82rem', color: 'var(--t2)', lineHeight: 1.65 }}>Track every booking, check-in/out time, and receipt in one place.</p>
+          </div>
+          <div className="feature-card s6">
+            <div className="feature-icon" style={{ background: 'rgba(0,240,255,.08)', color: 'var(--plasma)' }}><i className="bi bi-diagram-3-fill" /></div>
+            <h5 style={{ fontFamily: "'Exo 2',sans-serif", fontSize: '.88rem', letterSpacing: '.05em', marginBottom: '.5rem' }}>Role-Based Portals</h5>
+            <p style={{ fontSize: '.82rem', color: 'var(--t2)', lineHeight: 1.65 }}>Dedicated dashboards for students, staff check-in/out, and admins.</p>
+          </div>
         </div>
       </section>
     </>
