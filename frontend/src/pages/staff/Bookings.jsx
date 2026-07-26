@@ -5,6 +5,7 @@ import Alert from '../../components/Alert';
 import { StatusBadge, EmptyState } from '../../components/Bits';
 import { apiRequest } from '../../lib/api';
 import { formatDate, formatDateTime } from '../../lib/utils';
+import { getSocket } from '../../lib/socket';
 
 const COLORS = { Booked: 'booked', Active: 'active', Completed: 'completed', Cancelled: 'cancelled' };
 
@@ -23,7 +24,18 @@ export default function StaffBookings() {
     if (d && d.success) setAll(d.data);
   }, [fStatus, fDate]);
 
-  useEffect(() => { load(); }, [load]);
+  useEffect(() => {
+    load();
+    const socket = getSocket();
+    socket.on('bookingCreated', load);
+    socket.on('bookingUpdated', load);
+    socket.on('bookingCancelled', load);
+    return () => {
+      socket.off('bookingCreated', load);
+      socket.off('bookingUpdated', load);
+      socket.off('bookingCancelled', load);
+    };
+  }, [load]);
 
   const counts = useMemo(() => {
     const c = { Booked: 0, Active: 0, Completed: 0, Cancelled: 0 };

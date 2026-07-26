@@ -6,6 +6,7 @@ import { StatusBadge, EmptyState } from '../../components/Bits';
 import { apiRequest } from '../../lib/api';
 import { formatDate, formatDateTime } from '../../lib/utils';
 import { showToast } from '../../lib/toast';
+import { getSocket } from '../../lib/socket';
 
 const FILTERS = [
   { key: 'all', label: 'All', cls: 'primary' },
@@ -26,7 +27,16 @@ export default function UserBookings() {
     if (d && d.success) setAll(d.data);
   }, []);
 
-  useEffect(() => { load(); }, [load]);
+  useEffect(() => {
+    load();
+    const socket = getSocket();
+    socket.on('bookingUpdated', load);
+    socket.on('bookingCancelled', load);
+    return () => {
+      socket.off('bookingUpdated', load);
+      socket.off('bookingCancelled', load);
+    };
+  }, [load]);
 
   async function cancel(id) {
     if (!confirm('Cancel booking?')) return;
