@@ -4,26 +4,30 @@
 
 export const API_BASE = '/api';
 
+// sessionStorage (not localStorage) is used deliberately here: it is scoped
+// to a single browser tab. Opening the site in a brand new tab always starts
+// with an empty session, so the user has to log in again there — even
+// though they're already logged in on another tab of the same browser.
 export function getToken() {
-  return localStorage.getItem('agp_token');
+  return sessionStorage.getItem('agp_token');
 }
 
 export function getUser() {
   try {
-    return JSON.parse(localStorage.getItem('agp_user') || 'null');
+    return JSON.parse(sessionStorage.getItem('agp_user') || 'null');
   } catch {
     return null;
   }
 }
 
 export function setSession(token, user) {
-  localStorage.setItem('agp_token', token);
-  localStorage.setItem('agp_user', JSON.stringify(user));
+  sessionStorage.setItem('agp_token', token);
+  sessionStorage.setItem('agp_user', JSON.stringify(user));
 }
 
 export function clearSession() {
-  localStorage.removeItem('agp_token');
-  localStorage.removeItem('agp_user');
+  sessionStorage.removeItem('agp_token');
+  sessionStorage.removeItem('agp_user');
 }
 
 /**

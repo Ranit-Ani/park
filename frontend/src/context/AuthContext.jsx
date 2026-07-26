@@ -16,7 +16,7 @@ export function AuthProvider({ children }) {
 
   const updateUser = useCallback((patch) => {
     const merged = { ...getUser(), ...patch };
-    localStorage.setItem('agp_user', JSON.stringify(merged));
+    sessionStorage.setItem('agp_user', JSON.stringify(merged));
     setUser(merged);
   }, []);
 
