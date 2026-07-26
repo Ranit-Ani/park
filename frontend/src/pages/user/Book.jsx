@@ -5,6 +5,7 @@ import Modal from '../../components/Modal';
 import { ActionButton, EmptyState } from '../../components/Bits';
 import { apiRequest } from '../../lib/api';
 import { showToast } from '../../lib/toast';
+import { getSocket } from '../../lib/socket';
 
 function nowLocalDateTime() {
   const now = new Date();
@@ -32,7 +33,23 @@ export default function Book() {
     setSlots(list);
   }, [filterType, filterLoc]);
 
-  useEffect(() => { loadSlots(); }, []); // eslint-disable-line react-hooks/exhaustive-deps
+  useEffect(() => {
+    loadSlots();
+
+    // Live sync: whenever anyone books/cancels, or staff checks a vehicle
+    // in/out, refresh this grid instantly so the slot's color/status is
+    // always current — matches the behavior already on the Slots page.
+    const socket = getSocket();
+    socket.on('slotUpdated', loadSlots);
+    socket.on('slotDeleted', loadSlots);
+
+    const t = setInterval(loadSlots, 60000); // safety-net poll
+    return () => {
+      clearInterval(t);
+      socket.off('slotUpdated', loadSlots);
+      socket.off('slotDeleted', loadSlots);
+    };
+  }, [loadSlots]);
 
   function selectSlot(s) {
     if (!scheduledDate) return setAlert({ message: 'Select a date first.', type: 'warning' });
