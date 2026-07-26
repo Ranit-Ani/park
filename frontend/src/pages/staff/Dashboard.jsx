@@ -13,6 +13,8 @@ export default function StaffDashboard() {
   const [stats, setStats] = useState({ Booked: '--', Occupied: '--', Available: '--', total: '--' });
   const [rows, setRows] = useState([]);
   const [bill, setBill] = useState(null);
+  const [ciTarget, setCiTarget] = useState(null); // booking pending check-in
+  const [carNumber, setCarNumber] = useState('');
 
   const load = useCallback(async () => {
     const [s, bk] = await Promise.all([apiRequest('/slots/stats'), apiRequest('/staff/bookings')]);
@@ -40,11 +42,24 @@ export default function StaffDashboard() {
     };
   }, [load]);
 
-  async function doCI(id) {
-    if (!confirm('Confirm check-in?')) return;
-    const d = await apiRequest('/staff/checkin/' + id, { method: 'POST' });
-    if (d && d.success) { showToast('Check-in: Slot ' + d.data.slotId?.slotNumber, 'success'); load(); }
-    else showToast(d?.message || 'Failed.', 'danger');
+  function openCheckIn(booking) {
+    setCarNumber('');
+    setCiTarget(booking);
+  }
+
+  async function submitCheckIn() {
+    if (!ciTarget) return;
+    const d = await apiRequest('/staff/checkin/' + ciTarget._id, {
+      method: 'POST',
+      body: { carNumber },
+    });
+    if (d && d.success) {
+      showToast('Check-in: Slot ' + d.data.slotId?.slotNumber, 'success');
+      setCiTarget(null);
+      load();
+    } else {
+      showToast(d?.message || 'Failed.', 'danger');
+    }
   }
 
   async function doCO(id) {
@@ -83,10 +98,13 @@ export default function StaffDashboard() {
                   <td><strong>{b.userId?.name || '—'}</strong><br /><small style={{ color: 'var(--text-muted)' }}>{b.userId?.email || ''}</small></td>
                   <td><span style={{ color: 'var(--neon-cyan)', fontWeight: 700 }}>{b.slotId?.slotNumber}</span><br /><small style={{ color: 'var(--text-dim)' }}>{b.slotId?.location}</small></td>
                   <td>{formatDateTime(b.bookingTime)}</td>
-                  <td>{b.checkInTime ? formatDateTime(b.checkInTime) : <span style={{ color: 'var(--text-dim)' }}>—</span>}</td>
+                  <td>
+                    {b.checkInTime ? formatDateTime(b.checkInTime) : <span style={{ color: 'var(--text-dim)' }}>—</span>}
+                    {b.carNumber && <><br /><small style={{ color: 'var(--neon-orange)', fontFamily: 'monospace' }}>{b.carNumber}</small></>}
+                  </td>
                   <td><StatusBadge status={b.status} /></td>
                   <td>
-                    {b.status === 'Booked' && <button className="btn-ag green sm" onClick={() => doCI(b._id)}><i className="bi bi-box-arrow-in-right" /> Check In</button>}
+                    {b.status === 'Booked' && <button className="btn-ag green sm" onClick={() => openCheckIn(b)}><i className="bi bi-box-arrow-in-right" /> Check In</button>}
                     {b.status === 'Active' && <button className="btn-ag red sm" onClick={() => doCO(b._id)}><i className="bi bi-box-arrow-right" /> Check Out</button>}
                   </td>
                 </tr>
@@ -95,6 +113,32 @@ export default function StaffDashboard() {
           </table>
         </div>
       </div>
+
+      <Modal
+        show={!!ciTarget}
+        onClose={() => setCiTarget(null)}
+        title="Check In Vehicle"
+        icon="bi-box-arrow-in-right"
+        footer={<button className="btn-ag green full" onClick={submitCheckIn}><i className="bi bi-check-circle" /> Confirm Check-In</button>}
+      >
+        {ciTarget && (
+          <>
+            <p style={{ color: 'var(--text-muted)', marginBottom: '1rem' }}>
+              Slot <strong style={{ color: 'var(--neon-cyan)' }}>{ciTarget.slotId?.slotNumber}</strong> — {ciTarget.userId?.name}
+            </p>
+            <label className="ag-label">Car Number Plate</label>
+            <input
+              className="ag-input"
+              type="text"
+              autoFocus
+              placeholder="e.g. KA01AB1234"
+              value={carNumber}
+              onChange={(e) => setCarNumber(e.target.value.toUpperCase())}
+              onKeyDown={(e) => { if (e.key === 'Enter') submitCheckIn(); }}
+            />
+          </>
+        )}
+      </Modal>
 
       <Modal
         show={!!bill}
