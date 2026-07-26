@@ -6,6 +6,7 @@ import { apiRequest } from '../../lib/api';
 import { formatDate, formatDateTime } from '../../lib/utils';
 import { showToast } from '../../lib/toast';
 import { useAuth } from '../../context/AuthContext';
+import { getSocket } from '../../lib/socket';
 
 export default function UserDashboard() {
   const { user } = useAuth();
@@ -18,7 +19,25 @@ export default function UserDashboard() {
     setLoading(false);
   }, []);
 
-  useEffect(() => { load(); }, [load]);
+  useEffect(() => {
+    load();
+
+    // Live sync: staff check-in/check-out (bookingUpdated) or a cancellation
+    // (bookingCancelled) should reflect here immediately — e.g. Booked ->
+    // Active the moment staff checks the vehicle in.
+    const socket = getSocket();
+    socket.on('bookingUpdated', load);
+    socket.on('bookingCancelled', load);
+
+    // Safety-net poll in case a socket event is ever missed.
+    const t = setInterval(load, 60000);
+
+    return () => {
+      clearInterval(t);
+      socket.off('bookingUpdated', load);
+      socket.off('bookingCancelled', load);
+    };
+  }, [load]);
 
   async function cancelBooking(id) {
     if (!confirm('Cancel this booking?')) return;
