@@ -39,7 +39,7 @@ export default function App() {
 
           <Route path="/user/dashboard" element={<RequireAuth roles={['user']}><UserDashboard /></RequireAuth>} />
           <Route path="/user/slots" element={<RequireAuth roles={['user']}><UserSlots /></RequireAuth>} />
-          <Route path="/user/book" element={<RequireAuth roles={['user']}><UserBook /></RequireAuth>} />
+          <Route path="/user/book" element={<RequireAuth roles={['user']}><UserSlots /></RequireAuth>} />
           <Route path="/user/bookings" element={<RequireAuth roles={['user']}><UserBookings /></RequireAuth>} />
 
           <Route path="/staff/dashboard" element={<RequireAuth roles={['staff', 'admin']}><StaffDashboard /></RequireAuth>} />

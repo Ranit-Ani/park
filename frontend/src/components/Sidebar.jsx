@@ -11,7 +11,7 @@ const NAV = {
         label: 'Navigation',
         links: [
           { to: '/user/dashboard', icon: 'bi-speedometer2', text: 'Dashboard' },
-          { to: '/user/slots', icon: 'bi-grid-3x3-gap-fill', text: 'View Slots' },
+          { to: '/user/slots', icon: 'bi-grid-3x3-gap-fill', text: 'Slots & Booking' },
           { to: '/user/bookings', icon: 'bi-list-check', text: 'My Bookings' },
         ],
       },
