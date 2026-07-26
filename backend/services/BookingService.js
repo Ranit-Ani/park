@@ -56,7 +56,9 @@ class BookingService {
       // Notify every connected client (users, staff, admin) that a slot
       // just changed state, so their slot map / dashboard updates live.
       getIO().emit('slotUpdated', { slotId: slot._id, status: slot.status });
-      getIO().to('admin').emit('bookingCreated', { booking: populated });
+      // Staff need this too (to see it appear on their check-in queue),
+      // not just admins.
+      getIO().to('admin').to('staff').emit('bookingCreated', { booking: populated });
 
       return populated;
     } catch (err) {
@@ -110,7 +112,7 @@ class BookingService {
     await booking.save();
 
     getIO().emit('slotUpdated', { slotId: booking.slotId, status: 'Available' });
-    getIO().to('admin').emit('bookingCancelled', { bookingId: booking._id });
+    getIO().to('admin').to('staff').emit('bookingCancelled', { bookingId: booking._id });
 
     return booking;
   }
