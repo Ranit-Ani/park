@@ -12,7 +12,6 @@ const NAV = {
         links: [
           { to: '/user/dashboard', icon: 'bi-speedometer2', text: 'Dashboard' },
           { to: '/user/slots', icon: 'bi-grid-3x3-gap-fill', text: 'View Slots' },
-          { to: '/user/book', icon: 'bi-calendar-plus-fill', text: 'Book Slot' },
           { to: '/user/bookings', icon: 'bi-list-check', text: 'My Bookings' },
         ],
       },

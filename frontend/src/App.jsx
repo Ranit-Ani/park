@@ -11,7 +11,6 @@ import Profile from './pages/Profile';
 
 import UserDashboard from './pages/user/Dashboard';
 import UserSlots from './pages/user/Slots';
-import UserBook from './pages/user/Book';
 import UserBookings from './pages/user/Bookings';
 
 import StaffDashboard from './pages/staff/Dashboard';
