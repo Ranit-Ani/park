@@ -87,7 +87,7 @@ function generateReceiptPDF(booking, res) {
     .text(`${booking.slotId?.slotNumber || '—'}  (${booking.slotId?.location || '—'})`, col2X, textTop + 13);
   doc.fillColor('#555555').fontSize(9).font('Helvetica')
     .text(
-      `${booking.carNumber || 'Vehicle No. not recorded'}${booking.vehicleType ? '  ·  ' + booking.vehicleType : ''}`,
+      `${booking.registrationPending ? 'Registration Pending' : (booking.vehicleNumber || 'Vehicle No. not recorded')}${booking.vehicleCategory ? '  ·  ' + booking.vehicleCategory : ''}`,
       col2X,
       textTop + 30
     );

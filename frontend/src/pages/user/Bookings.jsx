@@ -87,10 +87,7 @@ export default function UserBookings() {
                   <td>
                     {b.status === 'Booked' && <button className="btn-ag red sm" onClick={() => cancel(b._id)}>Cancel</button>}
                     {b.status === 'Completed' && (
-                      <>
-                        <button className="btn-ag ghost sm" onClick={() => setBill(b)}><i className="bi bi-receipt" /></button>{' '}
-                        <button className="btn-ag cyan sm" onClick={() => downloadReceipt(b)}><i className="bi bi-file-earmark-pdf" /> PDF</button>
-                      </>
+                      <button className="btn-ag cyan sm" onClick={() => setBill(b)}><i className="bi bi-receipt" /> View Receipt</button>
                     )}
                   </td>
                 </tr>
@@ -116,6 +113,8 @@ export default function UserBookings() {
             </div>
             <table className="bill-table">
               <tbody>
+                <tr><td>Vehicle</td><td>{bill.vehicleCategory || '—'}</td></tr>
+                <tr><td>Registration No.</td><td>{bill.registrationPending ? <span className="ag-badge unverified">Pending</span> : (bill.vehicleNumber || '—')}</td></tr>
                 <tr><td>Check-In</td><td>{formatDateTime(bill.checkInTime)}</td></tr>
                 <tr><td>Check-Out</td><td>{formatDateTime(bill.checkOutTime)}</td></tr>
                 <tr><td>Billed Hours</td><td>{bill.totalHours}h</td></tr>
