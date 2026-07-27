@@ -47,7 +47,7 @@ export default function AdminBookings() {
   const rows = useMemo(() => {
     const q = search.toLowerCase();
     if (!q) return all;
-    return all.filter((b) => b._id.toLowerCase().includes(q) || (b.userId?.name || '').toLowerCase().includes(q) || (b.slotId?.slotNumber || '').toLowerCase().includes(q));
+    return all.filter((b) => b._id.toLowerCase().includes(q) || (b.userId?.name || '').toLowerCase().includes(q) || (b.slotId?.slotNumber || '').toLowerCase().includes(q) || (b.vehicleNumber || '').toLowerCase().includes(q));
   }, [all, search]);
 
   function clearF() { setFStatus(''); setFDate(''); setSearch(''); }
@@ -82,14 +82,20 @@ export default function AdminBookings() {
         <div className="tc-header"><h6>All Bookings <span style={{ color: 'var(--text-muted)', fontSize: '0.72rem' }}>({rows.length} results)</span></h6></div>
         <div className="table-responsive">
           <table className="ag-table">
-            <thead><tr><th>ID</th><th>User</th><th>Slot</th><th>Booked</th><th>Check-In</th><th>Check-Out</th><th>Hours</th><th>Amount</th><th>Status</th></tr></thead>
+            <thead><tr><th>ID</th><th>User</th><th>Vehicle</th><th>Slot</th><th>Booked</th><th>Check-In</th><th>Check-Out</th><th>Hours</th><th>Amount</th><th>Status</th></tr></thead>
             <tbody>
               {rows.length === 0 ? (
-                <tr><td colSpan={9}><EmptyState icon="bi-inbox">No bookings found.</EmptyState></td></tr>
+                <tr><td colSpan={10}><EmptyState icon="bi-inbox">No bookings found.</EmptyState></td></tr>
               ) : rows.map((b) => (
                 <tr key={b._id}>
                   <td><span className="font-mono" style={{ fontSize: '0.72rem', color: 'var(--text-muted)' }}>{b._id.slice(-8).toUpperCase()}</span></td>
                   <td><strong>{b.userId?.name || '—'}</strong><br /><small style={{ color: 'var(--text-muted)' }}>{b.userId?.email || ''}</small></td>
+                  <td>
+                    <span className="font-mono" style={{ fontWeight: 700 }}>
+                      {b.registrationPending ? <span className="ag-badge unverified">Pending</span> : (b.vehicleNumber || '—')}
+                    </span>
+                    <br /><small style={{ color: 'var(--text-muted)' }}>{b.vehicleCategory || ''}</small>
+                  </td>
                   <td><strong style={{ color: 'var(--neon-cyan)' }}>{b.slotId?.slotNumber || '—'}</strong><br /><small style={{ color: 'var(--text-dim)' }}>{b.slotId?.location || ''}</small></td>
                   <td>{formatDate(b.bookingTime)}</td>
                   <td>{b.checkInTime ? formatDateTime(b.checkInTime) : '—'}</td>

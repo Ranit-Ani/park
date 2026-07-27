@@ -20,6 +20,22 @@ const BookingSchema = new mongoose.Schema(
       type: Date,
       required: [true, 'Scheduled date is required'],
     },
+    vehicleCategory: {
+      type: String,
+      enum: ['2 Wheeler', '3 Wheeler', '4 Wheeler'],
+      required: [true, 'Vehicle category is required'],
+    },
+    vehicleNumber: {
+      type: String,
+      trim: true,
+      uppercase: true,
+      maxlength: 20,
+      default: null,
+    },
+    registrationPending: {
+      type: Boolean,
+      default: false,
+    },
     checkInTime: {
       type: Date,
       default: null,

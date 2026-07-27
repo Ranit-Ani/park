@@ -8,8 +8,8 @@ class BookingController {
   // POST /api/bookings
   async createBooking(req, res, next) {
     try {
-      const { slotId, scheduledDate, notes } = req.body;
-      const booking = await BookingService.createBooking(req.user._id, slotId, scheduledDate);
+      const { slotId, scheduledDate, vehicleCategory, vehicleNumber, registrationPending, notes } = req.body;
+      const booking = await BookingService.createBooking(req.user._id, slotId, scheduledDate, vehicleCategory, vehicleNumber, registrationPending);
 
       if (notes) {
         booking.notes = notes;

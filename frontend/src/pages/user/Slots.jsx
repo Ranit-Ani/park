@@ -22,6 +22,9 @@ export default function UserSlots() {
   const [alert, setAlert] = useState({ message: '', type: 'info' });
 
   const [selSlot, setSelSlot] = useState(null);
+  const [vehicleCategory, setVehicleCategory] = useState('');
+  const [vehicleNumber, setVehicleNumber] = useState('');
+  const [registrationPending, setRegistrationPending] = useState(false);
   const [confirmBusy, setConfirmBusy] = useState(false);
 
   const load = useCallback(async () => {
@@ -57,13 +60,29 @@ export default function UserSlots() {
 
   function selectSlot(s) {
     if (!scheduledDate) return setAlert({ message: 'Select a date first.', type: 'warning' });
+    setVehicleCategory('');
+    setVehicleNumber('');
+    setRegistrationPending(false);
     setSelSlot(s);
   }
 
   async function confirmBooking() {
     if (!selSlot) return;
+    if (!vehicleCategory) return setAlert({ message: 'Select a vehicle category.', type: 'warning' });
+    if (!registrationPending && !vehicleNumber.trim()) {
+      return setAlert({ message: 'Enter your vehicle registration number, or check "Registration Pending".', type: 'warning' });
+    }
     setConfirmBusy(true);
-    const data = await apiRequest('/bookings', { method: 'POST', body: { slotId: selSlot._id, scheduledDate } });
+    const data = await apiRequest('/bookings', {
+      method: 'POST',
+      body: {
+        slotId: selSlot._id,
+        scheduledDate,
+        vehicleCategory,
+        vehicleNumber: registrationPending ? null : vehicleNumber.trim(),
+        registrationPending,
+      },
+    });
     setConfirmBusy(false);
     setSelSlot(null);
     if (data && data.success) {
@@ -168,6 +187,42 @@ export default function UserSlots() {
                 <tr><td>Date</td><td>{new Date(scheduledDate).toLocaleString('en-IN')}</td></tr>
               </tbody>
             </table>
+            <div className="ag-input-group" style={{ marginTop: '1rem' }}>
+              <label className="ag-label">Vehicle Category</label>
+              <select className="ag-select" value={vehicleCategory} onChange={(e) => setVehicleCategory(e.target.value)} required>
+                <option value="">Select category...</option>
+                <option value="2 Wheeler">2 Wheeler</option>
+                <option value="3 Wheeler">3 Wheeler</option>
+                <option value="4 Wheeler">4 Wheeler</option>
+              </select>
+              <div style={{ fontSize: '0.68rem', color: 'var(--text-dim)', marginTop: '0.35rem' }}>
+                Buses, trucks, and other heavy vehicles are not supported.
+              </div>
+            </div>
+            <div className="ag-input-group">
+              <label className="ag-label">Vehicle Registration Number</label>
+              <div className="ag-input-icon">
+                <i className="bi bi-car-front" />
+                <input
+                  className="ag-input"
+                  type="text"
+                  placeholder="e.g. WB 02 AB 1234"
+                  value={registrationPending ? '' : vehicleNumber}
+                  onChange={(e) => setVehicleNumber(e.target.value.toUpperCase())}
+                  disabled={registrationPending}
+                  required={!registrationPending}
+                  style={registrationPending ? { opacity: 0.5, cursor: 'not-allowed' } : undefined}
+                />
+              </div>
+              <label className="ag-check-row">
+                <input
+                  type="checkbox"
+                  checked={registrationPending}
+                  onChange={(e) => setRegistrationPending(e.target.checked)}
+                />
+                <span>Registration Pending (New Vehicle)</span>
+              </label>
+            </div>
             <div className="ag-alert info" style={{ marginTop: '1rem', marginBottom: 0, fontSize: '0.8rem' }}>
               <i className="bi bi-info-circle" /> Min 1-hour billing. Final bill calculated at check-out.
             </div>

@@ -64,13 +64,19 @@ export default function UserBookings() {
       <div className="table-card">
         <div className="table-responsive">
           <table className="ag-table">
-            <thead><tr><th>Slot</th><th>Location</th><th>Booked</th><th>Check-In</th><th>Check-Out</th><th>Hours</th><th>Amount</th><th>Status</th><th></th></tr></thead>
+            <thead><tr><th>Slot</th><th>Vehicle</th><th>Location</th><th>Booked</th><th>Check-In</th><th>Check-Out</th><th>Hours</th><th>Amount</th><th>Status</th><th></th></tr></thead>
             <tbody>
               {rows.length === 0 ? (
-                <tr><td colSpan={9}><EmptyState icon="bi-calendar-x">No bookings found.</EmptyState></td></tr>
+                <tr><td colSpan={10}><EmptyState icon="bi-calendar-x">No bookings found.</EmptyState></td></tr>
               ) : rows.map((b) => (
                 <tr key={b._id}>
                   <td><strong style={{ color: 'var(--neon-cyan)' }}>{b.slotId?.slotNumber || '—'}</strong></td>
+                  <td>
+                    <span className="font-mono">
+                      {b.registrationPending ? <span className="ag-badge unverified">Pending</span> : (b.vehicleNumber || '—')}
+                    </span>
+                    <br /><small style={{ color: 'var(--text-muted)' }}>{b.vehicleCategory || ''}</small>
+                  </td>
                   <td style={{ color: 'var(--text-muted)' }}>{b.slotId?.location || '—'}</td>
                   <td>{formatDate(b.bookingTime)}</td>
                   <td>{b.checkInTime ? formatDateTime(b.checkInTime) : '—'}</td>

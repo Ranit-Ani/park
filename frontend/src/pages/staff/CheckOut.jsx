@@ -39,7 +39,7 @@ export default function CheckOut() {
   const rows = useMemo(() => {
     const q = search.toLowerCase();
     if (!q) return all;
-    return all.filter((b) => b._id.toLowerCase().includes(q) || (b.userId?.name || '').toLowerCase().includes(q) || (b.slotId?.slotNumber || '').toLowerCase().includes(q));
+    return all.filter((b) => b._id.toLowerCase().includes(q) || (b.userId?.name || '').toLowerCase().includes(q) || (b.slotId?.slotNumber || '').toLowerCase().includes(q) || (b.vehicleNumber || '').toLowerCase().includes(q));
   }, [all, search]);
 
   async function confirmCheckOut() {
@@ -56,20 +56,26 @@ export default function CheckOut() {
     <Layout title="Check-Out Console" badge={`${all.length} active`} badgeClass="occupied">
       <Alert message={alert.message} type={alert.type} />
       <div className="ag-card" style={{ padding: '1rem', marginBottom: '1.25rem' }}>
-        <div className="ag-input-icon"><i className="bi bi-search" /><input className="ag-input" type="text" placeholder="Search..." value={search} onChange={(e) => setSearch(e.target.value)} /></div>
+        <div className="ag-input-icon"><i className="bi bi-search" /><input className="ag-input" type="text" placeholder="Search by name, slot, vehicle, ID..." value={search} onChange={(e) => setSearch(e.target.value)} /></div>
       </div>
       <div className="table-card">
         <div className="tc-header"><h6>Active Sessions — Parked Now</h6><button className="btn-ag ghost sm" onClick={load}><i className="bi bi-arrow-clockwise" /> Refresh</button></div>
         <div className="table-responsive">
           <table className="ag-table">
-            <thead><tr><th>Booking ID</th><th>User</th><th>Slot</th><th>Location</th><th>Check-In</th><th>Duration</th><th>Est. Bill</th><th>Action</th></tr></thead>
+            <thead><tr><th>Booking ID</th><th>User</th><th>Vehicle</th><th>Slot</th><th>Location</th><th>Check-In</th><th>Duration</th><th>Est. Bill</th><th>Action</th></tr></thead>
             <tbody>
               {rows.length === 0 ? (
-                <tr><td colSpan={8}><EmptyState icon="bi-car-front">No active sessions.</EmptyState></td></tr>
+                <tr><td colSpan={9}><EmptyState icon="bi-car-front">No active sessions.</EmptyState></td></tr>
               ) : rows.map((b) => (
                 <tr key={b._id}>
                   <td><span className="font-mono" style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>{b._id.slice(-8).toUpperCase()}</span></td>
                   <td><strong>{b.userId?.name || '—'}</strong></td>
+                  <td>
+                    <span className="font-mono" style={{ fontWeight: 700 }}>
+                      {b.registrationPending ? <span className="ag-badge unverified">Pending</span> : (b.vehicleNumber || '—')}
+                    </span>
+                    <br /><small style={{ color: 'var(--text-muted)' }}>{b.vehicleCategory || ''}</small>
+                  </td>
                   <td><span className="ag-badge occupied">{b.slotId?.slotNumber || '—'}</span></td>
                   <td>{b.slotId?.location || '—'}</td>
                   <td>{formatDateTime(b.checkInTime)}</td>
@@ -103,6 +109,8 @@ export default function CheckOut() {
             <table className="bill-table">
               <tbody>
                 <tr><td>User</td><td style={{ fontWeight: 700 }}>{sel.userId?.name}</td></tr>
+                <tr><td>Vehicle</td><td style={{ color: 'var(--neon-orange)', fontWeight: 700 }}>{sel.vehicleCategory || '—'}</td></tr>
+                <tr><td>Registration No.</td><td style={{ color: 'var(--neon-orange)', fontWeight: 700, fontFamily: 'monospace' }}>{sel.registrationPending ? <span className="ag-badge unverified">Pending</span> : (sel.vehicleNumber || '—')}</td></tr>
                 <tr><td>Slot</td><td style={{ color: 'var(--neon-orange)', fontWeight: 700 }}>{sel.slotId?.slotNumber}</td></tr>
                 <tr><td>Check-In</td><td>{formatDateTime(sel.checkInTime)}</td></tr>
                 <tr><td>Check-Out</td><td style={{ color: 'var(--neon-red)', fontWeight: 700 }}>{new Date().toLocaleString('en-IN')}</td></tr>
@@ -129,6 +137,12 @@ export default function CheckOut() {
               <div style={{ fontSize: '0.7rem', color: 'rgba(255,255,255,0.5)', marginBottom: '0.25rem' }}>TOTAL CHARGED</div>
               <div className="bill-amount">₹{bill.bill.totalAmount}</div>
               <div style={{ fontSize: '0.8rem', color: 'rgba(255,255,255,0.5)' }}>{bill.booking.slotId?.slotNumber} | {bill.booking.userId?.name}</div>
+              {(bill.booking.vehicleNumber || bill.booking.registrationPending) && (
+                <div style={{ fontSize: '0.75rem', color: 'var(--neon-cyan)', fontFamily: 'monospace', marginTop: '0.2rem' }}>
+                  {bill.booking.vehicleCategory ? bill.booking.vehicleCategory + ' · ' : ''}
+                  {bill.booking.registrationPending ? 'Registration Pending' : bill.booking.vehicleNumber}
+                </div>
+              )}
             </div>
             <table className="bill-table">
               <tbody>

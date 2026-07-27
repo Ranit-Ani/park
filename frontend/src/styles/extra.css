@@ -157,6 +157,19 @@
 }
 .ag-select:focus { border-color: var(--plasma); }
 
+/* Consistent checkbox row (e.g. "Registration Pending") */
+.ag-check-row {
+  display: flex; align-items: center; gap: .55rem;
+  margin-top: .85rem; cursor: pointer; user-select: none;
+}
+.ag-check-row input[type="checkbox"] {
+  width: 17px; height: 17px; accent-color: var(--plasma);
+  cursor: pointer; flex-shrink: 0;
+}
+.ag-check-row span {
+  font-size: .82rem; color: var(--t2);
+}
+
 .spinner-border-sm {
   display: inline-block;
   width: .85rem; height: .85rem;

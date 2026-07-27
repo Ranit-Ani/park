@@ -27,7 +27,7 @@ export default function CheckIn() {
   const rows = useMemo(() => {
     const q = search.toLowerCase();
     if (!q) return all;
-    return all.filter((b) => b._id.toLowerCase().includes(q) || (b.userId?.name || '').toLowerCase().includes(q) || (b.slotId?.slotNumber || '').toLowerCase().includes(q));
+    return all.filter((b) => b._id.toLowerCase().includes(q) || (b.userId?.name || '').toLowerCase().includes(q) || (b.slotId?.slotNumber || '').toLowerCase().includes(q) || (b.vehicleNumber || '').toLowerCase().includes(q));
   }, [all, search]);
 
   async function confirmCheckIn() {
@@ -44,20 +44,26 @@ export default function CheckIn() {
     <Layout title="Check-In Console" badge={`${all.length} pending`} badgeClass="booked">
       <Alert message={alert.message} type={alert.type} />
       <div className="ag-card" style={{ padding: '1rem', marginBottom: '1.25rem' }}>
-        <div className="ag-input-icon"><i className="bi bi-search" /><input className="ag-input" type="text" placeholder="Search by name, slot, ID..." value={search} onChange={(e) => setSearch(e.target.value)} /></div>
+        <div className="ag-input-icon"><i className="bi bi-search" /><input className="ag-input" type="text" placeholder="Search by name, slot, vehicle, ID..." value={search} onChange={(e) => setSearch(e.target.value)} /></div>
       </div>
       <div className="table-card">
         <div className="tc-header"><h6>Booked — Awaiting Check-In</h6><button className="btn-ag ghost sm" onClick={load}><i className="bi bi-arrow-clockwise" /> Refresh</button></div>
         <div className="table-responsive">
           <table className="ag-table">
-            <thead><tr><th>Booking ID</th><th>User</th><th>Slot</th><th>Location</th><th>Scheduled</th><th>Booked At</th><th>Action</th></tr></thead>
+            <thead><tr><th>Booking ID</th><th>User</th><th>Vehicle</th><th>Slot</th><th>Location</th><th>Scheduled</th><th>Booked At</th><th>Action</th></tr></thead>
             <tbody>
               {rows.length === 0 ? (
-                <tr><td colSpan={7}><EmptyState icon="bi-check-all">No pending check-ins.</EmptyState></td></tr>
+                <tr><td colSpan={8}><EmptyState icon="bi-check-all">No pending check-ins.</EmptyState></td></tr>
               ) : rows.map((b) => (
                 <tr key={b._id}>
                   <td><span className="font-mono" style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>{b._id.slice(-8).toUpperCase()}</span></td>
                   <td><strong>{b.userId?.name || '—'}</strong><br /><small style={{ color: 'var(--text-muted)' }}>{b.userId?.email || ''}</small></td>
+                  <td>
+                    <span className="font-mono" style={{ fontWeight: 700 }}>
+                      {b.registrationPending ? <span className="ag-badge unverified">Pending</span> : (b.vehicleNumber || '—')}
+                    </span>
+                    <br /><small style={{ color: 'var(--text-muted)' }}>{b.vehicleCategory || ''}</small>
+                  </td>
                   <td><span className="ag-badge available">{b.slotId?.slotNumber || '—'}</span></td>
                   <td>{b.slotId?.location || '—'}</td>
                   <td>{formatDate(b.scheduledDate)}</td>
@@ -90,6 +96,8 @@ export default function CheckIn() {
             <table className="bill-table">
               <tbody>
                 <tr><td>User</td><td style={{ fontWeight: 700 }}>{sel.userId?.name}</td></tr>
+                <tr><td>Vehicle</td><td style={{ color: 'var(--neon-green)', fontWeight: 700 }}>{sel.vehicleCategory || '—'}</td></tr>
+                <tr><td>Registration No.</td><td style={{ color: 'var(--neon-green)', fontWeight: 700, fontFamily: 'monospace' }}>{sel.registrationPending ? <span className="ag-badge unverified">Pending</span> : (sel.vehicleNumber || '—')}</td></tr>
                 <tr><td>Slot</td><td style={{ color: 'var(--neon-cyan)', fontWeight: 700 }}>{sel.slotId?.slotNumber}</td></tr>
                 <tr><td>Location</td><td>{sel.slotId?.location}</td></tr>
                 <tr><td>Rate</td><td>₹{sel.slotId?.hourlyRate}/hour</td></tr>

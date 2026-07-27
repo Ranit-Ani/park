@@ -14,13 +14,30 @@ class BookingService {
    * @param {string} userId
    * @param {string} slotId
    * @param {Date} scheduledDate
+   * @param {string} vehicleCategory - '2 Wheeler' | '3 Wheeler' | '4 Wheeler'
+   * @param {string|null} vehicleNumber - required unless registrationPending
+   * @param {boolean} registrationPending - true for a brand-new, not-yet-registered vehicle
    * @returns {Promise<Booking>}
    */
-  async createBooking(userId, slotId, scheduledDate) {
+  async createBooking(userId, slotId, scheduledDate, vehicleCategory, vehicleNumber, registrationPending) {
     // Business Rule: One active booking per user
     const hasActive = await Booking.hasActiveBooking(userId);
     if (hasActive) {
       const err = new Error('You already have an active booking. Please complete or cancel it first.');
+      err.statusCode = 400;
+      throw err;
+    }
+
+    const ALLOWED_CATEGORIES = ['2 Wheeler', '3 Wheeler', '4 Wheeler'];
+    if (!vehicleCategory || !ALLOWED_CATEGORIES.includes(vehicleCategory)) {
+      const err = new Error('Select a valid vehicle category (2 Wheeler, 3 Wheeler, or 4 Wheeler).');
+      err.statusCode = 400;
+      throw err;
+    }
+
+    const isPending = !!registrationPending;
+    if (!isPending && (!vehicleNumber || !vehicleNumber.trim())) {
+      const err = new Error('Vehicle registration number is required, or check "Registration Pending".');
       err.statusCode = 400;
       throw err;
     }
@@ -48,6 +65,9 @@ class BookingService {
         userId,
         slotId,
         scheduledDate: new Date(scheduledDate),
+        vehicleCategory,
+        vehicleNumber: isPending ? null : vehicleNumber.trim().toUpperCase(),
+        registrationPending: isPending,
         status: 'Booked',
       });
 
