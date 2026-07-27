@@ -1,74 +1,57 @@
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import Chart from 'chart.js/auto';
 import Layout from '../../components/Layout';
 import { apiRequest } from '../../lib/api';
-import { getSocket } from '../../lib/socket';
 
 export default function Revenue() {
   const canvasRef = useRef(null);
   const chartRef = useRef(null);
   const [summary, setSummary] = useState({ totalRevenue: 0, totalBookings: 0, avgAmount: 0 });
 
-  const load = useCallback(async () => {
-    const d = await apiRequest('/admin/revenue');
-    if (!d || !d.success) return;
-    const { summary: s, daily } = d.data;
-    setSummary(s);
+  useEffect(() => {
+    (async () => {
+      const d = await apiRequest('/admin/revenue');
+      if (!d || !d.success) return;
+      const { summary: s, daily } = d.data;
+      setSummary(s);
 
-    if (chartRef.current) chartRef.current.destroy();
-    chartRef.current = new Chart(canvasRef.current, {
-      type: 'bar',
-      data: {
-        labels: daily.map((x) => x._id),
-        datasets: [{
-          label: 'Revenue (₹)',
-          data: daily.map((x) => x.revenue),
-          backgroundColor: 'rgba(0,136,255,0.5)',
-          borderColor: '#0088ff',
-          borderWidth: 2,
-          borderRadius: 6,
-          hoverBackgroundColor: 'rgba(0,245,255,0.6)',
-        }],
-      },
-      options: {
-        responsive: true,
-        plugins: {
-          legend: { display: false },
-          tooltip: {
-            backgroundColor: 'rgba(6,13,26,0.95)',
-            titleColor: '#00f5ff',
-            bodyColor: '#e8f4ff',
-            borderColor: 'rgba(0,245,255,0.2)',
-            borderWidth: 1,
+      if (chartRef.current) chartRef.current.destroy();
+      chartRef.current = new Chart(canvasRef.current, {
+        type: 'bar',
+        data: {
+          labels: daily.map((x) => x._id),
+          datasets: [{
+            label: 'Revenue (₹)',
+            data: daily.map((x) => x.revenue),
+            backgroundColor: 'rgba(0,136,255,0.5)',
+            borderColor: '#0088ff',
+            borderWidth: 2,
+            borderRadius: 6,
+            hoverBackgroundColor: 'rgba(0,245,255,0.6)',
+          }],
+        },
+        options: {
+          responsive: true,
+          plugins: {
+            legend: { display: false },
+            tooltip: {
+              backgroundColor: 'rgba(6,13,26,0.95)',
+              titleColor: '#00f5ff',
+              bodyColor: '#e8f4ff',
+              borderColor: 'rgba(0,245,255,0.2)',
+              borderWidth: 1,
+            },
+          },
+          scales: {
+            y: { beginAtZero: true, grid: { color: 'rgba(0,136,255,0.08)' }, ticks: { color: '#5a7a9a' } },
+            x: { grid: { display: false }, ticks: { color: '#5a7a9a' } },
           },
         },
-        scales: {
-          y: { beginAtZero: true, grid: { color: 'rgba(0,136,255,0.08)' }, ticks: { color: '#5a7a9a' } },
-          x: { grid: { display: false }, ticks: { color: '#5a7a9a' } },
-        },
-      },
-    });
+      });
+    })();
+
+    return () => { if (chartRef.current) chartRef.current.destroy(); };
   }, []);
-
-  useEffect(() => {
-    load();
-
-    // Live sync: a completed check-out fires 'revenueUpdated' — refresh the
-    // moment new revenue lands instead of waiting for a manual reload.
-    const socket = getSocket();
-    socket.on('revenueUpdated', load);
-    socket.on('bookingUpdated', load);
-
-    // Safety-net poll in case a socket event is ever missed.
-    const t = setInterval(load, 60000);
-
-    return () => {
-      clearInterval(t);
-      socket.off('revenueUpdated', load);
-      socket.off('bookingUpdated', load);
-      if (chartRef.current) chartRef.current.destroy();
-    };
-  }, [load]);
 
   return (
     <Layout title="Revenue Analytics" badge={false}>
