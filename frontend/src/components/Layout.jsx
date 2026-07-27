@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import Sidebar from './Sidebar';
 import { useAuth } from '../context/AuthContext';
 
@@ -8,12 +9,22 @@ import { useAuth } from '../context/AuthContext';
  */
 export default function Layout({ title, badge, badgeClass, right, children }) {
   const { user } = useAuth();
+  const [navOpen, setNavOpen] = useState(false);
 
   return (
     <>
-      <Sidebar />
+      <Sidebar open={navOpen} onNavigate={() => setNavOpen(false)} />
+      {navOpen && <div className="sidebar-overlay" onClick={() => setNavOpen(false)} />}
       <div className="main-content">
         <div className="top-bar">
+          <button
+            type="button"
+            className="mobile-menu-btn"
+            aria-label="Toggle menu"
+            onClick={() => setNavOpen((v) => !v)}
+          >
+            <i className={`bi ${navOpen ? 'bi-x-lg' : 'bi-list'}`} />
+          </button>
           <span className="top-bar-title">{title}</span>
           <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
             {right}

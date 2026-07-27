@@ -53,18 +53,19 @@ const NAV = {
   },
 };
 
-export default function Sidebar() {
+export default function Sidebar({ open, onNavigate }) {
   const { user, logout } = useAuth();
   const [showPreview, setShowPreview] = useState(false);
   if (!user) return null;
 
   const cfg = NAV[user.role] || NAV.user;
   const isAdmin = user.role === 'admin';
+  const closeNav = () => onNavigate && onNavigate();
 
   return (
     <>
-      <aside className="sidebar">
-        <NavLink className="sidebar-brand" to={cfg.home}>
+      <aside className={`sidebar ${open ? 'open' : ''}`}>
+        <NavLink className="sidebar-brand" to={cfg.home} onClick={closeNav}>
           <div className="brand-icon" style={isAdmin ? { background: 'linear-gradient(135deg,#ff2d55,#cc0033)', boxShadow: '0 0 20px rgba(255,45,85,0.4)' } : undefined}>
             <i className={`bi ${isAdmin ? 'bi-shield-lock-fill' : 'bi-p-square-fill'}`} />
           </div>
@@ -79,7 +80,7 @@ export default function Sidebar() {
             <div key={section.label}>
               <span className="nav-section">{section.label}</span>
               {section.links.map((l) => (
-                <NavLink key={l.to} to={l.to} className={({ isActive }) => (isActive ? 'active' : '')}>
+                <NavLink key={l.to} to={l.to} className={({ isActive }) => (isActive ? 'active' : '')} onClick={closeNav}>
                   <i className={`bi ${l.icon}`} /> {l.text}
                 </NavLink>
               ))}
@@ -106,7 +107,7 @@ export default function Sidebar() {
               <div className="sidebar-user-role">{user.role}</div>
             </div>
           </div>
-          <a href="#" className="btn-logout" onClick={(e) => { e.preventDefault(); logout(); }}>
+          <a href="#" className="btn-logout" onClick={(e) => { e.preventDefault(); closeNav(); logout(); }}>
             <i className="bi bi-box-arrow-right" /> Log Out
           </a>
         </div>
