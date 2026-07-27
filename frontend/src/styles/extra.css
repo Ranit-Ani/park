@@ -97,6 +97,7 @@
 .ag-modal-dialog {
   width: 100%;
   max-width: 480px;
+  max-height: 90vh;
   animation: agModalPop .2s ease;
 }
 .ag-modal-dialog.sm { max-width: 380px; }
@@ -111,13 +112,16 @@
   border: 1px solid rgba(0, 240, 255, .18);
   border-radius: 16px;
   box-shadow: 0 20px 60px rgba(0, 0, 0, .6), 0 0 40px rgba(0, 240, 255, .08);
-  overflow: hidden;
+  max-height: 90vh;
+  display: flex;
+  flex-direction: column;
 }
 
 .ag-modal-header {
   display: flex; align-items: center; justify-content: space-between;
   border-bottom: 1px solid rgba(0, 240, 255, .12);
   padding: 1rem 1.25rem .9rem;
+  flex-shrink: 0;
 }
 
 .ag-modal-title {
@@ -136,11 +140,12 @@
 }
 .ag-modal-close:hover { color: #fff; }
 
-.ag-modal-body { padding: 1.25rem; color: var(--t1); }
+.ag-modal-body { padding: 1.25rem; color: var(--t1); overflow-y: auto; flex: 1; }
 
 .ag-modal-footer {
   display: flex; justify-content: flex-end; gap: .6rem;
   padding: 1rem 1.25rem; border-top: 1px solid rgba(0, 240, 255, .08);
+  flex-shrink: 0;
 }
 
 /* Misc form select used across admin pages */
