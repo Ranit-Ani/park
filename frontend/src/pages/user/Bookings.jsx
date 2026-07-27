@@ -87,7 +87,7 @@ export default function UserBookings() {
                   <td>
                     {b.status === 'Booked' && <button className="btn-ag red sm" onClick={() => cancel(b._id)}>Cancel</button>}
                     {b.status === 'Completed' && (
-                      <button className="btn-ag cyan sm" onClick={() => setBill(b)}><i className="bi bi-receipt" /> View Receipt</button>
+                      <button className="btn-ag ghost sm" onClick={() => setBill(b)}><i className="bi bi-receipt" /></button>
                     )}
                   </td>
                 </tr>
