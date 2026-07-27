@@ -143,7 +143,7 @@ export default function Profile() {
   return (
     <Layout title="Operator Profile" badge={false}>
       <Alert message={alert.message} type={alert.type} />
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1.25rem', maxWidth: 900 }}>
+      <div className="profile-grid">
 
         <div className="ag-card ag-card-body">
           <div style={{ fontFamily: "'Syne',sans-serif", fontSize: '.65rem', color: 'var(--t2)', letterSpacing: '.15em', textTransform: 'uppercase', marginBottom: '1.4rem' }}>Identity</div>

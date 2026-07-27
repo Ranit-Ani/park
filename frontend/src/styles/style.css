@@ -452,6 +452,7 @@ h1,h2,h3,h4,h5,h6{font-family:'Exo 2',sans-serif;letter-spacing:.02em;color:var(
 .glow-plasma{text-shadow:0 0 20px rgba(0,240,255,.6);color:var(--plasma)}
 
 .mobile-menu-btn{display:none}
+.profile-grid{display:grid;grid-template-columns:1fr 1fr;gap:1.25rem;max-width:900px}
 @media(max-width:768px){
   .sidebar{transform:translateX(-100%);transition:transform .3s ease}
   .sidebar.open{transform:translateX(0)}
@@ -468,6 +469,7 @@ h1,h2,h3,h4,h5,h6{font-family:'Exo 2',sans-serif;letter-spacing:.02em;color:var(
     position:fixed;inset:0;z-index:190;
     background:rgba(0,0,0,.55);backdrop-filter:blur(2px)
   }
+  .profile-grid{grid-template-columns:1fr}
 }
 
 /* ── Public Footer ────────────────────────────────────────────── */
