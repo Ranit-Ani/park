@@ -1,18 +1,18 @@
-const Anthropic = require('@anthropic-ai/sdk');
+const { GoogleGenerativeAI, SchemaType } = require('@google/generative-ai');
 const Booking = require('../models/Booking');
 const ParkingSlot = require('../models/ParkingSlot');
 const User = require('../models/User');
 
-const MODEL = process.env.ANTHROPIC_MODEL || 'claude-sonnet-4-6';
+const MODEL = process.env.GEMINI_MODEL || 'gemini-2.5-flash';
 const MAX_TOOL_ROUNDS = 4;
 
 function client() {
-  if (!process.env.ANTHROPIC_API_KEY) {
-    const err = new Error('AI assistant is not configured on this server (missing ANTHROPIC_API_KEY).');
+  if (!process.env.GEMINI_API_KEY) {
+    const err = new Error('AI assistant is not configured on this server (missing GEMINI_API_KEY).');
     err.statusCode = 503;
     throw err;
   }
-  return new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
+  return new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
 }
 
 // ─── Tool definitions ──────────────────────────────────────────────────────
@@ -24,18 +24,18 @@ const BASE_TOOLS = [
   {
     name: 'get_slot_availability',
     description: 'Get current parking slot counts (Available/Booked/Occupied/total), optionally filtered by slot type or location.',
-    input_schema: {
-      type: 'object',
+    parameters: {
+      type: SchemaType.OBJECT,
       properties: {
-        slotType: { type: 'string', enum: ['standard', 'faculty', 'disabled', 'ev'], description: 'Filter by slot type' },
-        location: { type: 'string', description: 'Filter by location text, e.g. "Block A"' },
+        slotType: { type: SchemaType.STRING, enum: ['standard', 'faculty', 'disabled', 'ev'], description: 'Filter by slot type' },
+        location: { type: SchemaType.STRING, description: 'Filter by location text, e.g. "Block A"' },
       },
     },
   },
   {
     name: 'get_occupancy_insights',
     description: 'Get historical parking patterns: peak/quiet hours, busiest days of the week, average session length, and the most-used slots.',
-    input_schema: { type: 'object', properties: {} },
+    parameters: { type: SchemaType.OBJECT, properties: {} },
   },
 ];
 
@@ -43,15 +43,15 @@ const USER_TOOLS = [
   {
     name: 'get_my_bookings',
     description: "Get the current user's booking history, including status (Booked/Active/Completed/Cancelled/Expired), slot, and vehicle used.",
-    input_schema: {
-      type: 'object',
-      properties: { limit: { type: 'integer', description: 'Max bookings to return, default 10' } },
+    parameters: {
+      type: SchemaType.OBJECT,
+      properties: { limit: { type: SchemaType.INTEGER, description: 'Max bookings to return, default 10' } },
     },
   },
   {
     name: 'get_my_vehicles',
     description: "Get the current user's saved vehicles.",
-    input_schema: { type: 'object', properties: {} },
+    parameters: { type: SchemaType.OBJECT, properties: {} },
   },
 ];
 
@@ -59,18 +59,18 @@ const ADMIN_TOOLS = [
   {
     name: 'get_revenue_report',
     description: 'Get total revenue, number of completed bookings, and average bill amount for a date range (defaults to all-time).',
-    input_schema: {
-      type: 'object',
+    parameters: {
+      type: SchemaType.OBJECT,
       properties: {
-        startDate: { type: 'string', description: 'ISO date, optional' },
-        endDate: { type: 'string', description: 'ISO date, optional' },
+        startDate: { type: SchemaType.STRING, description: 'ISO date, optional' },
+        endDate: { type: SchemaType.STRING, description: 'ISO date, optional' },
       },
     },
   },
   {
     name: 'get_user_registry_summary',
     description: 'Get counts of users by role (user/staff/admin) and active/inactive status.',
-    input_schema: { type: 'object', properties: {} },
+    parameters: { type: SchemaType.OBJECT, properties: {} },
   },
 ];
 
@@ -80,12 +80,12 @@ function toolsForRole(role) {
 }
 
 // ─── Tool execution ─────────────────────────────────────────────────────────
-async function runTool(name, input, ctx) {
+async function runTool(name, args, ctx) {
   switch (name) {
     case 'get_slot_availability': {
       const query = { isActive: true };
-      if (input.slotType) query.slotType = input.slotType;
-      if (input.location) query.location = { $regex: input.location, $options: 'i' };
+      if (args.slotType) query.slotType = args.slotType;
+      if (args.location) query.location = { $regex: args.location, $options: 'i' };
       const slots = await ParkingSlot.find(query).select('slotNumber status slotType location hourlyRate');
       const summary = slots.reduce((acc, s) => {
         acc[s.status] = (acc[s.status] || 0) + 1;
@@ -96,7 +96,7 @@ async function runTool(name, input, ctx) {
     case 'get_occupancy_insights':
       return Booking.getOccupancyInsights();
     case 'get_my_bookings': {
-      const limit = Math.min(input.limit || 10, 25);
+      const limit = Math.min(args.limit || 10, 25);
       return Booking.find({ userId: ctx.userId })
         .populate('slotId', 'slotNumber location')
         .sort({ createdAt: -1 })
@@ -108,7 +108,7 @@ async function runTool(name, input, ctx) {
       return user ? user.vehicles : [];
     }
     case 'get_revenue_report':
-      return Booking.getRevenue(input.startDate, input.endDate);
+      return Booking.getRevenue(args.startDate, args.endDate);
     case 'get_user_registry_summary': {
       const [byRole, activeCounts] = await Promise.all([
         User.aggregate([{ $group: { _id: '$role', count: { $sum: 1 } } }]),
@@ -134,82 +134,66 @@ Rules the platform enforces that you should know:
 Use the available tools to fetch real, current data before answering questions about slots, bookings, revenue, or usage patterns — never guess numbers. Keep answers short and to the point (this is a small chat widget, not a report). If asked to do something outside this app's scope, say so plainly.`;
 }
 
-async function chat({ user, message, history = [] }) {
-  const anthropic = client();
-  const tools = toolsForRole(user.role);
+// Frontend sends history as [{ role: 'user'|'assistant', content: string }].
+// Gemini's Content objects use role 'user'|'model' and a parts[] array.
+function toGeminiHistory(history) {
+  return history.map((m) => ({
+    role: m.role === 'assistant' ? 'model' : 'user',
+    parts: [{ text: m.content }],
+  }));
+}
 
-  const messages = [
-    ...history.slice(-12).map((m) => ({ role: m.role, content: m.content })),
-    { role: 'user', content: message },
-  ];
+async function chat({ user, message, history = [] }) {
+  const genAI = client();
+  const tools = [{ functionDeclarations: toolsForRole(user.role) }];
+
+  const model = genAI.getGenerativeModel({
+    model: MODEL,
+    systemInstruction: systemPromptFor(user),
+    tools,
+  });
+
+  const chatSession = model.startChat({ history: toGeminiHistory(history.slice(-12)) });
+
+  let result = await chatSession.sendMessage(message);
 
   for (let round = 0; round < MAX_TOOL_ROUNDS; round++) {
-    const response = await anthropic.messages.create({
-      model: MODEL,
-      max_tokens: 1024,
-      system: systemPromptFor(user),
-      messages,
-      tools,
-    });
+    const calls = result.response.functionCalls();
+    if (!calls || calls.length === 0) break;
 
-    const toolUses = response.content.filter((b) => b.type === 'tool_use');
-
-    if (toolUses.length === 0 || response.stop_reason !== 'tool_use') {
-      const text = response.content
-        .filter((b) => b.type === 'text')
-        .map((b) => b.text)
-        .join('\n')
-        .trim();
-      return { reply: text || "I couldn't come up with an answer for that — try rephrasing?" };
-    }
-
-    messages.push({ role: 'assistant', content: response.content });
-
-    const toolResults = await Promise.all(
-      toolUses.map(async (tu) => {
-        let result;
+    const responseParts = await Promise.all(
+      calls.map(async (call) => {
+        let output;
         try {
-          result = await runTool(tu.name, tu.input || {}, { userId: user.id });
+          output = await runTool(call.name, call.args || {}, { userId: user.id });
         } catch (err) {
-          result = { error: err.message };
+          output = { error: err.message };
         }
-        return {
-          type: 'tool_result',
-          tool_use_id: tu.id,
-          content: JSON.stringify(result),
-        };
+        return { functionResponse: { name: call.name, response: { result: output } } };
       })
     );
 
-    messages.push({ role: 'user', content: toolResults });
+    result = await chatSession.sendMessage(responseParts);
   }
 
-  return { reply: "I'm having trouble pulling that together right now — try asking again in a moment." };
+  const text = (result.response.text() || '').trim();
+  return { reply: text || "I couldn't come up with an answer for that — try rephrasing?" };
 }
 
 // ─── Vision: license plate scanning ────────────────────────────────────────
 async function scanPlate({ imageBase64, mediaType = 'image/jpeg' }) {
-  const anthropic = client();
+  const genAI = client();
+  const model = genAI.getGenerativeModel({ model: MODEL });
 
-  const response = await anthropic.messages.create({
-    model: MODEL,
-    max_tokens: 300,
-    messages: [
-      {
-        role: 'user',
-        content: [
-          { type: 'image', source: { type: 'base64', media_type: mediaType, data: imageBase64 } },
-          {
-            type: 'text',
-            text: `Look at this photo of a vehicle license/registration plate. Respond with ONLY a JSON object, no other text, no markdown fences:
+  const result = await model.generateContent([
+    { inlineData: { mimeType: mediaType, data: imageBase64 } },
+    {
+      text: `Look at this photo of a vehicle license/registration plate. Respond with ONLY a JSON object, no other text, no markdown fences:
 {"plateNumber": "<the plate text, uppercase, spaces where visually separated, or null if unreadable>", "confidence": "<high|medium|low>", "vehicleCategoryGuess": "<2 Wheeler|3 Wheeler|4 Wheeler|null>"}`,
-          },
-        ],
-      },
-    ],
-  });
+    },
+  ]);
 
-  const text = response.content.find((b) => b.type === 'text')?.text || '{}';
+  const text = result.response.text() || '{}';
   const clean = text.replace(/```json|```/g, '').trim();
   try {
     return JSON.parse(clean);
