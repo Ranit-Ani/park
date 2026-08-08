@@ -24,7 +24,7 @@ exports.scanPlate = async (req, res, next) => {
     if (!imageBase64) {
       return res.status(400).json({ success: false, message: 'imageBase64 is required.' });
     }
-    const result = await LocalAIService.scanPlate();
+    const result = await LocalAIService.scanPlate(imageBase64);
     res.json({ success: true, data: result });
   } catch (err) {
     next(err);

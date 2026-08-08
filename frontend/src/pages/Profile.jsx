@@ -88,7 +88,7 @@ export default function Profile() {
         if (d.data.vehicleCategoryGuess && !vCategory) setVCategory(d.data.vehicleCategoryGuess);
         if (d.data.confidence === 'low') setVAlert({ message: 'Plate scanned, but I\'m not fully confident — please double-check it.', type: 'warning' });
       } else {
-        setVAlert({ message: (d && d.message) || "Couldn't read a plate in that photo. Try a clearer shot or type it in.", type: 'warning' });
+        setVAlert({ message: (d && d.data && d.data.note) || (d && d.message) || "Couldn't read a plate in that photo. Try a clearer shot or type it in.", type: 'warning' });
       }
     } finally {
       setVScanBusy(false);

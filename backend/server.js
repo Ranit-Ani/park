@@ -10,6 +10,17 @@ const http = require('http');
 const cron = require('node-cron');
 require('dotenv').config();
 
+// Keep the server alive if a background/async error slips past a request's
+// own try/catch (e.g. an OCR worker thread emitting a low-level error) —
+// log it instead of letting it take the whole process, and every current
+// user's connection, down.
+process.on('unhandledRejection', (reason) => {
+  console.error('❌ Unhandled Rejection:', reason);
+});
+process.on('uncaughtException', (err) => {
+  console.error('❌ Uncaught Exception:', err);
+});
+
 const { initSocket } = require('./socket');
 const BookingService = require('./services/BookingService');
 const { startAIProcess, stopAIProcess } = require('./utils/aiProcess');

@@ -1,11 +1,46 @@
 const path = require('path');
 const fs = require('fs');
+const Tesseract = require('tesseract.js');
 const { runTool } = require('./aiTools');
 
 // The ai/ directory sits at the project root, alongside backend/ and frontend/.
 const AI_ROOT = path.resolve(__dirname, '..', '..', 'ai');
 const INTENTS_CONFIG_PATH = path.join(AI_ROOT, 'config', 'intents.json');
 const AI_API_URL = process.env.AI_API_URL || 'http://127.0.0.1:5001';
+
+// Indian vehicle registration plate shape, e.g. "MH12AB1234" or "MH 12 AB 1234".
+// Matches after the OCR text has been uppercased; spacing/dashes are optional.
+const PLATE_REGEX = /\b([A-Z]{2}\s?-?\s?[0-9]{1,2}\s?-?\s?[A-Z]{1,2}\s?-?\s?[0-9]{4})\b/;
+
+// ─── Shared OCR worker ──────────────────────────────────────────────────
+// Tesseract.recognize() on its own creates and tears down a worker (and
+// re-fetches the English language data) on every call. Keep one worker
+// alive instead, and queue jobs so concurrent scans don't collide on it.
+let workerPromise = null;
+function getWorker() {
+  if (!workerPromise) {
+    // langPath defaults to tesseract.js's own jsDelivr CDN. Some hosts/
+    // networks block that CDN — set OCR_LANG_PATH to an alternate mirror
+    // (e.g. a raw.githubusercontent.com/naptha/tessdata path) if so.
+    const workerOptions = { logger: () => {} };
+    if (process.env.OCR_LANG_PATH) workerOptions.langPath = process.env.OCR_LANG_PATH;
+    workerPromise = Tesseract.createWorker('eng', 1, workerOptions).catch((err) => {
+      workerPromise = null; // allow the next call to retry creating it
+      throw err;
+    });
+  }
+  return workerPromise;
+}
+
+let ocrQueue = Promise.resolve();
+function runOcr(buffer) {
+  const job = ocrQueue.then(async () => {
+    const worker = await getWorker();
+    return worker.recognize(buffer);
+  });
+  ocrQueue = job.catch(() => {}); // keep the queue alive even if this job fails
+  return job;
+}
 
 let intentsConfig = null;
 function loadIntentsConfig() {
@@ -169,15 +204,76 @@ async function chat({ user, message }) {
 }
 
 // ─── Public: scanPlate ───────────────────────────────────────────────────
-// The custom model here is a text intent classifier, not a vision model, so
-// it cannot read a plate from an image. Rather than failing the request,
-// tell the frontend clearly so it can fall back to manual entry.
-async function scanPlate() {
+// Runs real OCR (Tesseract.js — self-hosted, no external API key) on the
+// uploaded photo, then extracts a plate-shaped token from the recognized
+// text. This is separate from the text intent classifier above; OCR needs
+// image input, not a category label.
+function cleanToken(raw) {
+  return raw.replace(/[^A-Z0-9]/g, '').toUpperCase();
+}
+
+function extractPlate(rawText) {
+  const text = (rawText || '').toUpperCase();
+
+  // 1) Prefer a strict Indian-plate-shaped match anywhere in the text.
+  const strict = text.match(PLATE_REGEX);
+  if (strict) return cleanToken(strict[1]);
+
+  // 2) Fallback: the longest token that mixes letters and digits and is a
+  //    plausible plate length — catches plates OCR read with odd spacing
+  //    or a non-Indian format.
+  const tokens = text.split(/\s+/).map(cleanToken).filter(Boolean);
+  const candidate = tokens
+    .filter((t) => t.length >= 6 && t.length <= 11 && /[A-Z]/.test(t) && /[0-9]/.test(t))
+    .sort((a, b) => b.length - a.length)[0];
+
+  return candidate || null;
+}
+
+async function scanPlate(imageBase64) {
+  if (!imageBase64) {
+    return { plateNumber: null, confidence: 'low', vehicleCategoryGuess: null, note: 'No image received.' };
+  }
+
+  let buffer;
+  try {
+    buffer = Buffer.from(imageBase64, 'base64');
+    if (!buffer.length) throw new Error('empty buffer');
+  } catch (err) {
+    return { plateNumber: null, confidence: 'low', vehicleCategoryGuess: null, note: "That image couldn't be read — please try taking the photo again." };
+  }
+
+  let ocrResult;
+  try {
+    ocrResult = await runOcr(buffer);
+  } catch (err) {
+    const e = new Error('The OCR engine failed to process that photo. Please try again.');
+    e.statusCode = 502;
+    throw e;
+  }
+
+  const rawText = ocrResult?.data?.text || '';
+  const meanConfidence = ocrResult?.data?.confidence ?? 0; // 0–100, Tesseract's own estimate
+  const plateNumber = extractPlate(rawText);
+
+  if (!plateNumber) {
+    return {
+      plateNumber: null,
+      confidence: 'low',
+      vehicleCategoryGuess: null,
+      note: "Couldn't find a number plate in that photo. Fill the frame with just the plate, use good lighting, and hold the camera straight-on.",
+    };
+  }
+
+  const confidence = meanConfidence >= 70 ? 'high' : meanConfidence >= 40 ? 'medium' : 'low';
+
   return {
-    plateNumber: null,
-    confidence: 'low',
+    plateNumber,
+    confidence,
+    // Vehicle category (car/bike/etc.) can't be reliably inferred from a
+    // plate crop alone, so this stays unset — the user picks it manually.
     vehicleCategoryGuess: null,
-    note: "Automatic plate scanning isn't available with the self-hosted model — please type the registration number.",
+    note: null,
   };
 }
 
