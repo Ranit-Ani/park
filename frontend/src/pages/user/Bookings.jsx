@@ -2,8 +2,10 @@ import { useCallback, useEffect, useState } from 'react';
 import Layout from '../../components/Layout';
 import Alert from '../../components/Alert';
 import Modal from '../../components/Modal';
+import InfiniteSentinel from '../../components/InfiniteSentinel';
 import { StatusBadge, EmptyState } from '../../components/Bits';
 import { apiRequest, downloadFile } from '../../lib/api';
+import { useInfiniteList } from '../../lib/useInfiniteList';
 import { formatDate, formatDateTime } from '../../lib/utils';
 import { showToast } from '../../lib/toast';
 import { getSocket } from '../../lib/socket';
@@ -18,31 +20,35 @@ const FILTERS = [
 ];
 
 export default function UserBookings() {
-  const [all, setAll] = useState([]);
   const [filter, setFilter] = useState('all');
   const [alert, setAlert] = useState({ message: '', type: 'info' });
   const [bill, setBill] = useState(null);
 
-  const load = useCallback(async () => {
-    const d = await apiRequest('/bookings');
-    if (d && d.success) setAll(d.data);
-  }, []);
+  const buildUrl = useCallback((page, limit) => {
+    let url = `/bookings?page=${page}&limit=${limit}`;
+    if (filter !== 'all') url += `&status=${encodeURIComponent(filter)}`;
+    return url;
+  }, [filter]);
+
+  // Bookings are fetched a page at a time (server-side filtered by status)
+  // and grow as the user scrolls, instead of loading the entire history.
+  const { items: rows, loading, loadingMore, hasMore, loadMore, refresh } =
+    useInfiniteList(buildUrl, [filter], 20);
 
   useEffect(() => {
-    load();
     const socket = getSocket();
-    socket.on('bookingUpdated', load);
-    socket.on('bookingCancelled', load);
+    socket.on('bookingUpdated', refresh);
+    socket.on('bookingCancelled', refresh);
     return () => {
-      socket.off('bookingUpdated', load);
-      socket.off('bookingCancelled', load);
+      socket.off('bookingUpdated', refresh);
+      socket.off('bookingCancelled', refresh);
     };
-  }, [load]);
+  }, [refresh]);
 
   async function cancel(id) {
     if (!confirm('Cancel booking?')) return;
     const d = await apiRequest('/bookings/' + id, { method: 'DELETE' });
-    if (d && d.success) { showToast('Cancelled.', 'warning'); load(); }
+    if (d && d.success) { showToast('Cancelled.', 'warning'); refresh(); }
     else showToast(d?.message || 'Failed.', 'danger');
   }
 
@@ -51,8 +57,6 @@ export default function UserBookings() {
     const res = await downloadFile(`/bookings/${booking._id}/receipt`, filename);
     if (!res.success) showToast(res.message || 'Could not download receipt.', 'danger');
   }
-
-  const rows = filter === 'all' ? all : all.filter((b) => b.status === filter);
 
   return (
     <Layout title="Mission Log">
@@ -67,7 +71,9 @@ export default function UserBookings() {
           <table className="ag-table">
             <thead><tr><th>Slot</th><th>Vehicle</th><th>Location</th><th>Booked</th><th>Check-In</th><th>Check-Out</th><th>Hours</th><th>Amount</th><th>Status</th><th></th></tr></thead>
             <tbody>
-              {rows.length === 0 ? (
+              {rows.length === 0 && loading ? (
+                <tr><td colSpan={10} style={{ textAlign: 'center', padding: '2rem', color: 'var(--text-muted)' }}>Loading bookings...</td></tr>
+              ) : rows.length === 0 ? (
                 <tr><td colSpan={10}><EmptyState icon="bi-calendar-x">No bookings found.</EmptyState></td></tr>
               ) : rows.map((b) => (
                 <tr key={b._id}>
@@ -96,6 +102,9 @@ export default function UserBookings() {
             </tbody>
           </table>
         </div>
+        {rows.length > 0 && (
+          <InfiniteSentinel onVisible={loadMore} hasMore={hasMore} loading={loadingMore} />
+        )}
       </div>
 
       <Modal

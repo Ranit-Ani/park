@@ -44,8 +44,8 @@ export default function Profile() {
   const [vPending, setVPending] = useState(false);
   const [vNickname, setVNickname] = useState('');
   const [vBusy, setVBusy] = useState(false);
-  const [vScanBusy, setVScanBusy] = useState(false);
   const [vAlert, setVAlert] = useState({ message: '', type: 'info' });
+  const [vScanBusy, setVScanBusy] = useState(false);
 
   const isUserRole = user?.role === 'user';
 
@@ -71,6 +71,7 @@ export default function Profile() {
     });
   }
 
+  // ─── AI: scan a photo of a number plate to auto-fill the registration ──────
   async function scanVehiclePlate(e) {
     const file = e.target.files?.[0];
     e.target.value = ''; // allow re-selecting the same file next time
@@ -229,7 +230,7 @@ export default function Profile() {
       <div className="profile-grid">
 
         <div className="ag-card ag-card-body">
-          <div style={{ fontFamily: "'Syne',sans-serif", fontSize: '.65rem', color: 'var(--t2)', letterSpacing: '.15em', textTransform: 'uppercase', marginBottom: '1.4rem' }}>Identity</div>
+          <div style={{ fontFamily: "'Inter',sans-serif", fontSize: '.65rem', color: 'var(--t2)', letterSpacing: '.15em', textTransform: 'uppercase', marginBottom: '1.4rem' }}>Identity</div>
 
           <div style={{ textAlign: 'center', marginBottom: '1.5rem' }}>
             <div className="profile-avatar-wrap" onClick={() => fileRef.current?.click()}>
@@ -241,7 +242,7 @@ export default function Profile() {
               <div className="profile-avatar-overlay"><i className="bi bi-camera-fill" style={{ fontSize: '1.1rem' }} /><span>Change</span></div>
             </div>
             <input ref={fileRef} type="file" accept="image/*" style={{ display: 'none' }} onChange={handlePhoto} />
-            <div style={{ fontSize: '.72rem', color: 'var(--t2)', fontFamily: "'Syne',sans-serif", letterSpacing: '.08em' }}>CLICK TO CHANGE PHOTO</div>
+            <div style={{ fontSize: '.72rem', color: 'var(--t2)', fontFamily: "'Inter',sans-serif", letterSpacing: '.08em' }}>CLICK TO CHANGE PHOTO</div>
           </div>
 
           <form onSubmit={saveProfile}>
@@ -274,7 +275,7 @@ export default function Profile() {
 
         <div style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
           <div className="ag-card ag-card-body">
-            <div style={{ fontFamily: "'Syne',sans-serif", fontSize: '.65rem', color: 'var(--t2)', letterSpacing: '.15em', textTransform: 'uppercase', marginBottom: '1.2rem' }}>Security</div>
+            <div style={{ fontFamily: "'Inter',sans-serif", fontSize: '.65rem', color: 'var(--t2)', letterSpacing: '.15em', textTransform: 'uppercase', marginBottom: '1.2rem' }}>Security</div>
             <form onSubmit={savePassword}>
               <div className="ag-input-group">
                 <label className="ag-label">Current Password</label>
@@ -297,15 +298,18 @@ export default function Profile() {
           {isUserRole && (
             <div className="ag-card ag-card-body">
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.2rem' }}>
-                <div style={{ fontFamily: "'Syne',sans-serif", fontSize: '.65rem', color: 'var(--t2)', letterSpacing: '.15em', textTransform: 'uppercase' }}>My Vehicles</div>
+                <div style={{ fontFamily: "'Inter',sans-serif", fontSize: '.65rem', color: 'var(--t2)', letterSpacing: '.15em', textTransform: 'uppercase' }}>My Vehicles</div>
                 <button type="button" className="btn-ag plasma sm" onClick={openAddVehicle}><i className="bi bi-plus-lg" /> Add Vehicle</button>
               </div>
               {vehicles.length === 0 ? (
                 <p style={{ fontSize: '.82rem', color: 'var(--t2)' }}>No saved vehicles yet. Add one so you can pick it instantly when booking a slot.</p>
               ) : (
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '.6rem' }}>
+                <div
+                  className="vehicle-list-scroll"
+                  style={{ display: 'flex', flexDirection: 'column', gap: '.6rem', height: '84px', overflowY: 'auto', paddingRight: '.4rem' }}
+                >
                   {vehicles.map((v) => (
-                    <div key={v._id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '.6rem .8rem', border: '1px solid var(--t4)', borderRadius: '10px' }}>
+                    <div key={v._id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '.6rem .8rem', border: '1px solid var(--t4)', borderRadius: '10px', flexShrink: 0 }}>
                       <div>
                         <div style={{ fontWeight: 700, fontFamily: 'monospace' }}>
                           {v.registrationPending ? <span className="ag-badge unverified">Pending</span> : v.vehicleNumber}
@@ -320,8 +324,8 @@ export default function Profile() {
             </div>
           )}
 
-          <div className="ag-card ag-card-body" style={{ borderColor: 'rgba(255,60,120,.15)' }}>
-            <div style={{ fontFamily: "'Syne',sans-serif", fontSize: '.65rem', color: 'var(--nova)', letterSpacing: '.15em', textTransform: 'uppercase', marginBottom: '1rem' }}>Danger Zone</div>
+          <div className="ag-card ag-card-body" style={{ borderColor: 'rgba(176,72,63,.15)' }}>
+            <div style={{ fontFamily: "'Inter',sans-serif", fontSize: '.65rem', color: 'var(--nova)', letterSpacing: '.15em', textTransform: 'uppercase', marginBottom: '1rem' }}>Danger Zone</div>
             <p style={{ fontSize: '.82rem', color: 'var(--t2)', marginBottom: '1rem', lineHeight: 1.6 }}>
               Permanently delete your account and all associated data. This action cannot be undone.
             </p>
@@ -366,7 +370,7 @@ export default function Profile() {
         title="Delete Account"
         icon="bi-exclamation-triangle"
         size="sm"
-        headerStyle={{ background: 'linear-gradient(135deg,rgba(255,60,120,.12),rgba(200,0,50,.08))' }}
+        headerStyle={{ background: 'linear-gradient(135deg,rgba(176,72,63,.12),rgba(122,46,40,.08))' }}
         footer={(
           <>
             <button className="btn-ag ghost" onClick={() => setDeleteModal(false)}>Cancel</button>

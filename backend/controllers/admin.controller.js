@@ -25,23 +25,22 @@ class AdminController {
     }
   }
 
-  // GET /api/admin/analytics/occupancy
-  async getOccupancyInsights(req, res, next) {
-    try {
-      const insights = await AdminService.getOccupancyInsights();
-      res.json({ success: true, data: insights });
-    } catch (err) {
-      next(err);
-    }
-  }
-
   // ─── User Management ──────────────────────────────────────────────────────────
   // GET /api/admin/users
   async getAllUsers(req, res, next) {
     try {
-      const { page = 1, limit = 20 } = req.query;
-      const result = await AdminService.getAllUsers(Number(page), Number(limit));
-      res.json({ success: true, ...result });
+      const page = Math.max(1, Number(req.query.page) || 1);
+      const limit = Math.min(100, Math.max(1, Number(req.query.limit) || 20));
+      const { users, total, pages } = await AdminService.getAllUsers(page, limit);
+      res.json({
+        success: true,
+        data: users,
+        page,
+        limit,
+        total,
+        pages,
+        hasMore: (page - 1) * limit + users.length < total,
+      });
     } catch (err) {
       next(err);
     }

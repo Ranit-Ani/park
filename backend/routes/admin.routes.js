@@ -10,7 +10,6 @@ router.use(authorize('admin'));
 // Dashboard & Revenue
 router.get('/dashboard', adminController.getDashboard);
 router.get('/revenue', adminController.getRevenue);
-router.get('/analytics/occupancy', adminController.getOccupancyInsights);
 
 // User Management
 router.get('/users', adminController.getAllUsers);

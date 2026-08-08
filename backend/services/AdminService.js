@@ -40,11 +40,6 @@ class AdminService {
     return { summary, daily };
   }
 
-  // ─── Occupancy / demand insights (feeds the admin dashboard + the AI assistant) ──
-  async getOccupancyInsights() {
-    return Booking.getOccupancyInsights();
-  }
-
   // ─── User Management ──────────────────────────────────────────────────────────
   async getAllUsers(page = 1, limit = 20) {
     const skip = (page - 1) * limit;
@@ -75,12 +70,6 @@ class AdminService {
       throw err;
     }
 
-    // Notify every connected admin session live — so if two admins have
-    // the User Management page open, a role change (which also moves the
-    // user between the "Users" and "Staff" sections) shows up instantly
-    // without anyone needing to refresh.
-    getIO().to('admin').emit('userUpdated', { userId: user._id, role: user.role, isActive: user.isActive });
-
     return user;
   }
 
@@ -94,7 +83,7 @@ class AdminService {
     user.isActive = !user.isActive;
     await user.save();
 
-    getIO().to('admin').emit('userUpdated', { userId: user._id, role: user.role, isActive: user.isActive });
+    getIO().to('admin').emit('userUpdated', { userId: user._id, isActive: user.isActive });
 
     return user;
   }

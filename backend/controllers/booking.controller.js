@@ -32,14 +32,24 @@ class BookingController {
     }
   }
 
-  // GET /api/bookings - Get user's bookings
+  // GET /api/bookings - Get user's bookings (paginated)
   async getMyBookings(req, res, next) {
     try {
-      const bookings = await BookingService.getUserBookings(req.user._id);
+      const page = Math.max(1, Number(req.query.page) || 1);
+      const limit = Math.min(100, Math.max(1, Number(req.query.limit) || 20));
+      const { status } = req.query;
+
+      const { bookings, total } = await BookingService.getUserBookings(req.user._id, { page, limit, status });
+
       res.json({
         success: true,
         count: bookings.length,
         data: bookings,
+        page,
+        limit,
+        total,
+        pages: Math.ceil(total / limit),
+        hasMore: (page - 1) * limit + bookings.length < total,
       });
     } catch (err) {
       next(err);

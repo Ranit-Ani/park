@@ -2,19 +2,18 @@ import { useCallback, useEffect, useState } from 'react';
 import Layout from '../../components/Layout';
 import Alert from '../../components/Alert';
 import Modal from '../../components/Modal';
+import InfiniteSentinel from '../../components/InfiniteSentinel';
 import { ActionButton, EmptyState } from '../../components/Bits';
 import { apiRequest } from '../../lib/api';
+import { useInfiniteList } from '../../lib/useInfiniteList';
 import { showToast } from '../../lib/toast';
 import { getSocket } from '../../lib/socket';
 
 export default function UserSlots() {
   const [filterType, setFilterType] = useState('');
   const [filterLoc, setFilterLoc] = useState('');
-  const [slots, setSlots] = useState(null); // null = loading
   const [counts, setCounts] = useState({ Available: '--', Booked: '--', Occupied: '--', total: '--' });
   const [alert, setAlert] = useState({ message: '', type: 'info' });
-  const [insights, setInsights] = useState(null);
-  const [scanBusy, setScanBusy] = useState(false);
 
   const [selSlot, setSelSlot] = useState(null);
   const [savedVehicles, setSavedVehicles] = useState([]);
@@ -24,41 +23,47 @@ export default function UserSlots() {
   const [registrationPending, setRegistrationPending] = useState(false);
   const [saveVehicle, setSaveVehicle] = useState(false);
   const [confirmBusy, setConfirmBusy] = useState(false);
+  const [invalidField, setInvalidField] = useState(null); // 'category' | 'number' | null
 
-  const load = useCallback(async () => {
-    const [all, stats] = await Promise.all([apiRequest('/slots/all'), apiRequest('/slots/stats')]);
-    if (stats && stats.success) setCounts(stats.data);
-    if (!all || !all.success) return setSlots([]);
-    let list = all.data;
-    if (filterType) list = list.filter((s) => s.slotType === filterType);
-    if (filterLoc) list = list.filter((s) => s.location.toLowerCase().includes(filterLoc.toLowerCase()));
-    setSlots(list);
+  const buildUrl = useCallback((page, limit) => {
+    let url = `/slots/all?page=${page}&limit=${limit}`;
+    if (filterType) url += `&type=${encodeURIComponent(filterType)}`;
+    if (filterLoc) url += `&search=${encodeURIComponent(filterLoc)}`;
+    return url;
   }, [filterType, filterLoc]);
 
-  useEffect(() => {
-    apiRequest('/slots/insights').then((d) => { if (d && d.success) setInsights(d.data); });
+  // Slots load a page at a time and grow as the user scrolls, instead of
+  // pulling every slot in the system at once.
+  const { items: slotsLoaded, loading, loadingMore, hasMore, loadMore, refresh } =
+    useInfiniteList(buildUrl, [filterType, filterLoc], 30);
+  const slots = loading && slotsLoaded.length === 0 ? null : slotsLoaded;
+
+  const loadStats = useCallback(async () => {
+    const stats = await apiRequest('/slots/stats');
+    if (stats && stats.success) setCounts(stats.data);
   }, []);
 
   useEffect(() => {
-    load();
+    loadStats();
 
     // Live sync: whenever anyone books/cancels, or staff checks a vehicle
     // in/out, or an admin adds/edits/removes a slot, every open tab
     // refreshes instantly — no manual refresh needed.
     const socket = getSocket();
-    socket.on('slotUpdated', load);
-    socket.on('slotDeleted', load);
+    const onChange = () => { loadStats(); refresh(); };
+    socket.on('slotUpdated', onChange);
+    socket.on('slotDeleted', onChange);
 
     // Safety-net poll in case a socket event is ever missed (e.g. brief
     // disconnect on Render's free tier during a cold start).
-    const t = setInterval(load, 60000);
+    const t = setInterval(onChange, 60000);
 
     return () => {
       clearInterval(t);
-      socket.off('slotUpdated', load);
-      socket.off('slotDeleted', load);
+      socket.off('slotUpdated', onChange);
+      socket.off('slotDeleted', onChange);
     };
-  }, [load]);
+  }, [loadStats, refresh]);
 
   async function selectSlot(s) {
     setVehicleCategory('');
@@ -66,6 +71,8 @@ export default function UserSlots() {
     setRegistrationPending(false);
     setSaveVehicle(false);
     setVehicleChoice('');
+    setAlert({ message: '', type: 'info' });
+    setInvalidField(null);
     setSelSlot(s);
 
     // Load the user's saved vehicles so they can pick one instead of
@@ -86,6 +93,14 @@ export default function UserSlots() {
     }
   }
 
+  function pulseInvalid(field) {
+    // Clear first so the class un-mounts, then re-apply next frame — this
+    // lets the blink replay even if the same field was already flagged
+    // from a previous click.
+    setInvalidField(null);
+    requestAnimationFrame(() => setInvalidField(field));
+  }
+
   async function confirmBooking() {
     if (!selSlot) return;
 
@@ -94,8 +109,12 @@ export default function UserSlots() {
     if (vehicleChoice) {
       body.vehicleId = vehicleChoice;
     } else {
-      if (!vehicleCategory) return setAlert({ message: 'Select a vehicle category.', type: 'warning' });
+      if (!vehicleCategory) {
+        pulseInvalid('category');
+        return setAlert({ message: 'Select a vehicle category.', type: 'warning' });
+      }
       if (!registrationPending && !vehicleNumber.trim()) {
+        pulseInvalid('number');
         return setAlert({ message: 'Enter your vehicle registration number, or check "Registration Pending".', type: 'warning' });
       }
       body.vehicleCategory = vehicleCategory;
@@ -110,53 +129,14 @@ export default function UserSlots() {
     setSelSlot(null);
     if (data && data.success) {
       showToast('Slot ' + selSlot.slotNumber + ' booked! Check in within 1 hour.', 'success');
-      load();
+      refresh(); loadStats();
     } else {
       setAlert({ message: (data && data.message) || 'Booking failed.', type: 'danger' });
     }
   }
 
-  function hourLabel(h) {
-    const period = h < 12 ? 'AM' : 'PM';
-    const h12 = h % 12 === 0 ? 12 : h % 12;
-    return `${h12} ${period}`;
-  }
-
-  function fileToBase64(file) {
-    return new Promise((resolve, reject) => {
-      const reader = new FileReader();
-      reader.onload = () => resolve(reader.result.split(',')[1]);
-      reader.onerror = reject;
-      reader.readAsDataURL(file);
-    });
-  }
-
-  async function scanPlate(e) {
-    const file = e.target.files?.[0];
-    e.target.value = ''; // allow re-selecting the same file next time
-    if (!file) return;
-
-    setScanBusy(true);
-    setAlert({ message: '', type: 'info' });
-    try {
-      const imageBase64 = await fileToBase64(file);
-      const d = await apiRequest('/ai/scan-plate', { method: 'POST', body: { imageBase64, mediaType: file.type || 'image/jpeg' } });
-      if (d && d.success && d.data.plateNumber) {
-        setVehicleNumber(d.data.plateNumber);
-        setRegistrationPending(false);
-        if (d.data.vehicleCategoryGuess && !vehicleCategory) setVehicleCategory(d.data.vehicleCategoryGuess);
-        if (d.data.confidence === 'low') setAlert({ message: 'Plate scanned, but I\'m not fully confident — please double-check it.', type: 'warning' });
-      } else {
-        setAlert({ message: (d && d.message) || "Couldn't read a plate in that photo. Try a clearer shot or type it in.", type: 'warning' });
-      }
-    } finally {
-      setScanBusy(false);
-    }
-  }
-
   return (
     <Layout title="Orbital Slot Map">
-      <Alert message={alert.message} type={alert.type} />
 
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(160px,1fr))', gap: '1rem', marginBottom: '1.5rem' }}>
         <div className="stat-card green"><div className="stat-label">Available</div><div className="stat-value">{counts.Available}</div></div>
@@ -164,14 +144,6 @@ export default function UserSlots() {
         <div className="stat-card red"><div className="stat-label">Occupied</div><div className="stat-value">{counts.Occupied}</div></div>
         <div className="stat-card cyan"><div className="stat-label">Total</div><div className="stat-value">{counts.total}</div></div>
       </div>
-
-      {insights && insights.peakHours.length > 0 && (
-        <div className="ag-alert info" style={{ marginBottom: '1.25rem', fontSize: '0.8rem' }}>
-          <i className="bi bi-stars" />
-          Usually busiest around <strong>{insights.peakHours.map((h) => hourLabel(h.hour)).join(', ')}</strong>
-          {insights.quietHours.length > 0 && <> — quietest around <strong>{insights.quietHours.map((h) => hourLabel(h.hour)).join(', ')}</strong></>}.
-        </div>
-      )}
 
       <div className="ag-card" style={{ padding: '1.25rem', marginBottom: '1.5rem' }}>
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(200px,1fr))', gap: '1rem', alignItems: 'end' }}>
@@ -189,7 +161,7 @@ export default function UserSlots() {
             <label className="ag-label">Location</label>
             <input className="ag-input" type="text" placeholder="e.g. Block A" value={filterLoc} onChange={(e) => setFilterLoc(e.target.value)} />
           </div>
-          <button className="btn-ag primary" onClick={load}><i className="bi bi-search" /> Scan Slots</button>
+          <button className="btn-ag primary" onClick={refresh}><i className="bi bi-search" /> Scan Slots</button>
         </div>
       </div>
 
@@ -223,6 +195,10 @@ export default function UserSlots() {
         </div>
       )}
 
+      {slots && slots.length > 0 && (
+        <InfiniteSentinel onVisible={loadMore} hasMore={hasMore} loading={loadingMore} />
+      )}
+
       <Modal
         show={!!selSlot}
         onClose={() => setSelSlot(null)}
@@ -239,6 +215,7 @@ export default function UserSlots() {
       >
         {selSlot && (
           <>
+            <Alert message={alert.message} type={alert.type} />
             <div className="bill-receipt">
               <div style={{ fontSize: '0.7rem', color: 'rgba(255,255,255,0.5)', letterSpacing: '0.1em', marginBottom: '0.3rem' }}>SELECTED SLOT</div>
               <div className="font-orbit" style={{ fontSize: '1.8rem', fontWeight: 700, color: 'var(--neon-cyan)' }}>{selSlot.slotNumber}</div>
@@ -271,7 +248,12 @@ export default function UserSlots() {
               <>
                 <div className="ag-input-group">
                   <label className="ag-label">Vehicle Category</label>
-                  <select className="ag-select" value={vehicleCategory} onChange={(e) => setVehicleCategory(e.target.value)} required>
+                  <select
+                    className={`ag-select${invalidField === 'category' ? ' field-blink-error' : ''}`}
+                    value={vehicleCategory}
+                    onChange={(e) => { setVehicleCategory(e.target.value); setInvalidField(null); }}
+                    required
+                  >
                     <option value="">Select category...</option>
                     <option value="2 Wheeler">2 Wheeler</option>
                     <option value="3 Wheeler">3 Wheeler</option>
@@ -283,30 +265,24 @@ export default function UserSlots() {
                 </div>
                 <div className="ag-input-group">
                   <label className="ag-label">Vehicle Registration Number</label>
-                  <div style={{ display: 'flex', gap: '.5rem', alignItems: 'stretch' }}>
-                    <div className="ag-input-icon" style={{ flex: 1 }}>
-                      <i className="bi bi-car-front" />
-                      <input
-                        className="ag-input"
-                        type="text"
-                        placeholder="e.g. WB 02 AB 1234"
-                        value={registrationPending ? '' : vehicleNumber}
-                        onChange={(e) => setVehicleNumber(e.target.value.toUpperCase())}
-                        disabled={registrationPending}
-                        required={!registrationPending}
-                        style={registrationPending ? { opacity: 0.5, cursor: 'not-allowed' } : undefined}
-                      />
-                    </div>
-                    <label className={`btn-ag plasma sm ${registrationPending || scanBusy ? 'disabled' : ''}`} style={{ flexShrink: 0, cursor: registrationPending || scanBusy ? 'not-allowed' : 'pointer', opacity: registrationPending || scanBusy ? 0.5 : 1 }}>
-                      {scanBusy ? <span className="spinner-border-sm" /> : <i className="bi bi-camera" />}
-                      <input type="file" accept="image/*" capture="environment" onChange={scanPlate} disabled={registrationPending || scanBusy} style={{ display: 'none' }} />
-                    </label>
+                  <div className="ag-input-icon">
+                    <i className="bi bi-car-front" />
+                    <input
+                      className={`ag-input${invalidField === 'number' ? ' field-blink-error' : ''}`}
+                      type="text"
+                      placeholder="e.g. WB 02 AB 1234"
+                      value={registrationPending ? '' : vehicleNumber}
+                      onChange={(e) => { setVehicleNumber(e.target.value.toUpperCase()); setInvalidField(null); }}
+                      disabled={registrationPending}
+                      required={!registrationPending}
+                      style={registrationPending ? { opacity: 0.5, cursor: 'not-allowed' } : undefined}
+                    />
                   </div>
                   <label className="ag-check-row">
                     <input
                       type="checkbox"
                       checked={registrationPending}
-                      onChange={(e) => setRegistrationPending(e.target.checked)}
+                      onChange={(e) => { setRegistrationPending(e.target.checked); setInvalidField(null); }}
                     />
                     <span>Registration Pending (New Vehicle)</span>
                   </label>
@@ -323,7 +299,7 @@ export default function UserSlots() {
             )}
 
             <div className="ag-alert info" style={{ marginTop: '1rem', marginBottom: 0, fontSize: '0.8rem' }}>
-              <i className="bi bi-info-circle" /> Booking is for right now. You have <strong>1 hour</strong> to check in before it auto-expires and the slot is released. Min 1-hour billing; final bill calculated at check-out.
+              <i className="bi bi-info-circle" /> Booking is for right now. You have 1 hour to check in before it auto-expires and the slot is released. Min 1-hour billing; final bill calculated at check-out.
             </div>
           </>
         )}

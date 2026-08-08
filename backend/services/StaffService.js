@@ -104,21 +104,42 @@ class StaffService {
   }
 
   /**
-   * Get all active (checked-in) bookings
-   * @returns {Promise<Booking[]>}
+   * Get all active (checked-in) bookings, paginated.
+   * @param {object} [opts]
+   * @param {number} [opts.page=1]
+   * @param {number} [opts.limit=30]
+   * @returns {Promise<{bookings: Booking[], total: number}>}
    */
-  async getActiveBookings() {
-    return Booking.find({ status: { $in: ['Booked', 'Active'] } })
-      .populate('userId', 'name email role')
-      .populate('slotId', 'slotNumber location floor slotType')
-      .sort({ bookingTime: -1 });
+  async getActiveBookings(opts = {}) {
+    const { page = 1, limit = 30 } = opts;
+    const skip = (page - 1) * limit;
+    const query = { status: { $in: ['Booked', 'Active'] } };
+
+    const [bookings, total] = await Promise.all([
+      Booking.find(query)
+        .populate('userId', 'name email role')
+        .populate('slotId', 'slotNumber location floor slotType')
+        .sort({ bookingTime: -1 })
+        .skip(skip)
+        .limit(limit),
+      Booking.countDocuments(query),
+    ]);
+
+    return { bookings, total };
   }
 
   /**
-   * Get all bookings (for staff view)
-   * @returns {Promise<Booking[]>}
+   * Get all bookings (for staff/admin view), paginated.
+   * @param {object} [filters]
+   * @param {string} [filters.status]
+   * @param {string} [filters.date]
+   * @param {number} [filters.page=1]
+   * @param {number} [filters.limit=30]
+   * @returns {Promise<{bookings: Booking[], total: number}>}
    */
   async getAllBookings(filters = {}) {
+    const { page = 1, limit = 30 } = filters;
+    const skip = (page - 1) * limit;
     const query = {};
     if (filters.status) query.status = filters.status;
     if (filters.date) {
@@ -128,11 +149,17 @@ class StaffService {
       query.bookingTime = { $gte: start, $lte: end };
     }
 
-    return Booking.find(query)
-      .populate('userId', 'name email role')
-      .populate('slotId', 'slotNumber location floor slotType hourlyRate')
-      .sort({ createdAt: -1 })
-      .limit(200);
+    const [bookings, total] = await Promise.all([
+      Booking.find(query)
+        .populate('userId', 'name email role')
+        .populate('slotId', 'slotNumber location floor slotType hourlyRate')
+        .sort({ createdAt: -1 })
+        .skip(skip)
+        .limit(limit),
+      Booking.countDocuments(query),
+    ]);
+
+    return { bookings, total };
   }
 }
 

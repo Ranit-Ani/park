@@ -1,280 +1,439 @@
 text,intent
-how do i update my vehicle's details,vehicle_management
-hey,greeting
-can i register a heavy vehicle,vehicle_management
-how do i mark a slot as ev charging,admin_slot_management
-how do i confirm checkout and calculate the bill,staff_checkout_process
-how do i remove a saved vehicle,vehicle_management
-what's my booking history,my_bookings
-hi assistant,greeting
-hiya,greeting
-is faculty parking full,check_availability
-checkout console guide for staff,staff_checkout_process
-show me the revenue report,revenue_report
-as staff how do i process a checkout,staff_checkout_process
-what's the booking time limit,booking_policy
-have i booked a slot,my_bookings
-give me the billing summary,revenue_report
-show inactive accounts count,user_registry
-how do i check in a visitor as staff,staff_checkin_process
-how does booking work,booking_policy
-breakdown of users staff and admins,user_registry
-my saved vehicle list,my_vehicles
-list vehicles on my account,my_vehicles
-how many slots are occupied right now,check_availability
-how many standard slots are free,check_availability
-how does demand change during the day,occupancy_insights
-give me a summary of registered users,user_registry
-how do i edit my display name,account_management
-translate this sentence to spanish,unknown
-help me with my homework,unknown
-most used parking slots,occupancy_insights
-how do i delete my account,account_management
-how do i scan a license plate,scan_plate_help
-how do i change a slot's hourly rate,admin_slot_management
-is deleting my account reversible,account_management
-play some music for me,unknown
-process for adding a new vehicle,vehicle_management
-how to cancel a reservation,cancellation_policy
-who checks me in,checkin_policy
-how do i undo a reservation,cancellation_policy
-bye bye,goodbye
-how to manage my vehicles,vehicle_management
-when is parking busiest,occupancy_insights
-how many slots are available,check_availability
-can i take a photo of my plate instead of typing it,scan_plate_help
-list my past bookings,my_bookings
-see you later,goodbye
-can i change my login email,account_management
-how do i deactivate a slot,admin_slot_management
-how do i verify a vehicle at check in,staff_checkin_process
-how do i generate a receipt for a user,staff_checkout_process
-update my profile settings,account_management
-admin guide to managing users,admin_user_management
-how many staff members are there,user_registry
-any free slots in block a,check_availability
-good evening,greeting
-do i have a car saved,my_vehicles
-steps to save a new vehicle to my account,vehicle_management
-total earnings from bookings,revenue_report
-show my parking history,my_bookings
-steps to book a slot,booking_policy
-later,goodbye
-hello,greeting
-give me the busy times for parking,occupancy_insights
-what's the status of my booking,my_bookings
-how many active users are there,user_registry
-steps for staff to check someone in,staff_checkin_process
-how old are you,unknown
-how do i cook pasta,unknown
-what are the peak hours,occupancy_insights
-how do i cancel my booking,cancellation_policy
-view my vehicles,my_vehicles
-any disabled slots available,check_availability
-how do i change my password,account_management
-how to use the camera to add a vehicle,scan_plate_help
 show all my bikes and cars,my_vehicles
-much appreciated,thanks
-how do i check in my vehicle,checkin_policy
-how do i permanently close my account,account_management
-can i add a bus or truck,vehicle_management
-thank you so much,thanks
-show me occupancy trends,occupancy_insights
-any parking near block b,check_availability
-what happens when i check out,checkout_billing_policy
-who checks me out,checkout_billing_policy
-how many users vs staff vs admin,user_registry
-how is my bill calculated,checkout_billing_policy
-which vehicles are linked to my account,my_vehicles
-steps for staff to check someone out,staff_checkout_process
-good afternoon,greeting
-what are the quiet hours,occupancy_insights
-what's the total income from parking,revenue_report
-yo,greeting
-bye,goodbye
-what if staff can't check me in on time,checkin_policy
-what's the availability like,check_availability
-how do i secure my account,account_management
-how do i edit my vehicle details,vehicle_management
-how do i add a new vehicle,vehicle_management
-how are parking fees rounded,checkout_billing_policy
-what's the busiest day of the week,occupancy_insights
-what happens during check in,checkin_policy
-the plate scanner isn't reading my plate,scan_plate_help
-list my vehicles,my_vehicles
-minimum billing time for parking,checkout_billing_policy
-who is the president,unknown
-revenue report for this quarter,revenue_report
-what's your favorite color,unknown
-thanks a lot,thanks
-scan my number plate automatically,scan_plate_help
-show historical occupancy data,occupancy_insights
-what's the minimum charge for parking,checkout_billing_policy
-how do i make someone an admin,admin_user_management
-what cars are on my profile,my_vehicles
-cya,goodbye
-what kinds of vehicles can i register,vehicle_management
-does my booking expire,booking_policy
-recommend me a movie,unknown
-show user counts by role,user_registry
-total completed bookings revenue,revenue_report
-ty,thanks
-what's your name,unknown
-cancel booking process,cancellation_policy
-talk to you later,goodbye
-write me a poem,unknown
-tell me a joke,unknown
+have i booked a slot,my_bookings
+trends in parking usage,occupancy_insights
+show my recent reservations,my_bookings
+greetings,greeting
 can i cancel after checking in,cancellation_policy
-show earnings between these dates,revenue_report
-hi,greeting
+do i have a car saved,my_vehicles
+how do i confirm check in for a user,staff_checkin_process
+how much will i be charged,checkout_billing_policy
+list my past bookings,my_bookings
+check slot availability,check_availability
+is there space to park,check_availability
+how to check out a user's car,staff_checkout_process
+is my booking still active,my_bookings
+give me the money numbers,revenue_report
+do i have any bikes saved,my_vehicles
+how is my bill calculated,checkout_billing_policy
+explain check in,checkin_policy
+play some music for me,unknown
+good evening,greeting
+can i take a photo of my plate instead of typing it,scan_plate_help
+how do i set up a new faculty slot,admin_slot_management
+how do i scan a license plate,scan_plate_help
+show total collections this month,revenue_report
+how much money did parking generate,revenue_report
+how are parking fees rounded,checkout_billing_policy
+hey there,greeting
+thats it for now bye,goodbye
+show my parking history,my_bookings
+checkout process,checkout_billing_policy
+my vehicles,my_vehicles
+bye,goodbye
+what did i book,my_bookings
+can i reserve a spot ahead of time,booking_policy
+any parking near block b,check_availability
+appreciate it,thanks
+hi bot,greeting
+what's my vehicle registration number,my_vehicles
+how do i edit my vehicle details,vehicle_management
+how do i check out a vehicle as staff,staff_checkout_process
+remove a car from my account,vehicle_management
+does my booking expire,booking_policy
+staff checkout guide,staff_checkout_process
+how do i get billed,checkout_billing_policy
+explain the booking process,booking_policy
+when should i avoid coming to park,occupancy_insights
+what slots are open right now,check_availability
+when does parking get crowded,occupancy_insights
+give me usage patterns,occupancy_insights
+how many admins are in the system,user_registry
+do i have a booking right now,my_bookings
+how much did parking bring in,revenue_report
+peak parking hours,occupancy_insights
+im done bye,goodbye
+cool thanks,thanks
+my saved vehicle list,my_vehicles
+how many users vs staff vs admin,user_registry
+can i cancel an active booking,cancellation_policy
+perfect thank you,thanks
+thanks,thanks
+how many total slots do we have,check_availability
 how do i change my email,account_management
 how do i reserve a parking spot,booking_policy
-can you write my essay,unknown
-what's the weather today,unknown
-how do i make a reservation,booking_policy
-how do i promote a user to staff,admin_user_management
-is billing rounded up,checkout_billing_policy
-awesome thanks,thanks
-hey there,greeting
-is there an empty slot i can use,check_availability
+reset password,account_management
+edit slot rate,admin_slot_management
+most popular parking slots,occupancy_insights
 user registry summary,user_registry
-what's the capital of france,unknown
-how much for 1 hour 10 minutes of parking,checkout_billing_policy
-what vehicles do i have on file,my_vehicles
-can i add a bike and a car both,vehicle_management
-show vehicles i've added,my_vehicles
-im done bye,goodbye
-how do i set up a new faculty slot,admin_slot_management
-perfect thank you,thanks
 tell me a fun fact,unknown
-how do i add a new parking slot,admin_slot_management
-show total collections this month,revenue_report
-how many admins are in the system,user_registry
-how do i edit slot type or location,admin_slot_management
-how is parking fee calculated,checkout_billing_policy
-how does plate scanning work,scan_plate_help
-explain the checkout and billing process,checkout_billing_policy
-can staff cancel my booking for me,cancellation_policy
-do i have any bikes saved,my_vehicles
-how many bookings can i have at once,booking_policy
-can i save multiple vehicles,vehicle_management
-how do i find a user's pending booking,staff_checkin_process
-can i book multiple slots at once,booking_policy
-got any open parking spots,check_availability
-gotta go,goodbye
-staff checkout console instructions,staff_checkout_process
-see ya,goodbye
-check in console guide for staff,staff_checkin_process
-is there a fee to cancel a booking,cancellation_policy
-what's 2 plus 2,unknown
-how many users do we have,user_registry
-can i check myself in,checkin_policy
-explain the check-in process,checkin_policy
-how does checkout work,checkout_billing_policy
-explain the booking process,booking_policy
-is there space to park,check_availability
-tell me about the stock market,unknown
-how do i delete a saved vehicle,vehicle_management
-what's my vehicle registration number,my_vehicles
-what times are the busiest,occupancy_insights
-hello there,greeting
 steps to reset my account password,account_management
-morning,greeting
-do i have any active bookings,my_bookings
-how do i get my booking checked in,checkin_policy
-how many total slots do we have,check_availability
-sing me a song,unknown
-what happens after i'm checked in,checkin_policy
-can i cancel my slot before check in,cancellation_policy
-what's the average parking session length,occupancy_insights
-can i update my name on my profile,account_management
-show revenue for last week,revenue_report
-how do i check out a vehicle as staff,staff_checkout_process
-can i find a free slot right now,check_availability
-as staff how do i process a check in,staff_checkin_process
-total number of registered accounts,user_registry
-is there any parking available right now,check_availability
-how do i update my profile picture,account_management
-what happens if i cancel a booking,cancellation_policy
-thank you,thanks
-how does check in work,checkin_policy
-how is check-in done,checkin_policy
-how much will i be charged,checkout_billing_policy
-which day is busiest for parking,occupancy_insights
-does check in expire,checkin_policy
+is faculty parking full,check_availability
+when is parking busiest,occupancy_insights
+my booking status,my_bookings
+that's all bye,goodbye
+what's the cancellation policy,cancellation_policy
+check my booking status,my_bookings
 how many parking spots are left,check_availability
-show my last 5 bookings,my_bookings
-show completed bookings for me,my_bookings
-exiting now bye,goodbye
-is my booking still active,my_bookings
-does cancelling cost anything,cancellation_policy
+how do i generate a receipt for a user,staff_checkout_process
+what's our total earnings,revenue_report
+how do i undo a reservation,cancellation_policy
+how to change my profile photo,account_management
+give me the billing summary,revenue_report
+thank you so much,thanks
+how to undo my booking,cancellation_policy
+tell me about yourself,unknown
+great thanks a ton,thanks
+revenue this month,revenue_report
+any parking left,check_availability
+what happens during check in,checkin_policy
+any free slots in block a,check_availability
+hiya there,greeting
+how far in advance can i book,booking_policy
+how do i permanently close my account,account_management
+later,goodbye
 give me a revenue summary,revenue_report
+can i get my money back if i cancel,cancellation_policy
+total completed bookings revenue,revenue_report
+thanks that helped,thanks
+what vehicle did i use for my last booking,my_bookings
+user stats please,user_registry
+how many users do we have,user_registry
+show completed bookings for me,my_bookings
+can staff cancel my booking for me,cancellation_policy
+hey how's it going,greeting
+alright im leaving,goodbye
+what are the quiet hours,occupancy_insights
+what if staff can't check me in on time,checkin_policy
+how does checkout work,checkout_billing_policy
+have i got anything booked,my_bookings
+show me user numbers,user_registry
+closing this bye,goodbye
+how do i add a new parking slot,admin_slot_management
+show income report,revenue_report
+who is the president,unknown
+good afternoon,greeting
+see ya,goodbye
+most used parking slots,occupancy_insights
+yo whats up,greeting
+check in process,checkin_policy
+check availability please,check_availability
+recommend me a movie,unknown
+gotta go,goodbye
+see you later,goodbye
+gtg bye,goodbye
+hiya,greeting
+yo,greeting
+tell me about the stock market,unknown
+total number of registered accounts,user_registry
+what's 2 plus 2,unknown
+morning,greeting
+nice one thanks,thanks
+done here bye,goodbye
+give me the user breakdown by role,user_registry
+ty,thanks
+show my vehicle details,my_vehicles
+my bookings please,my_bookings
+steps to save a new vehicle to my account,vehicle_management
+how do i verify a vehicle at check in,staff_checkin_process
+can i schedule a booking for tomorrow,booking_policy
+how much does faculty parking cost per hour,check_availability
+is there a fee to cancel a booking,cancellation_policy
+are there any open ev charging slots,check_availability
+staff check in console instructions,staff_checkin_process
+total registered users,user_registry
+manage users as admin,admin_user_management
+how soon does a booking expire,booking_policy
+delete my profile,account_management
+is billing rounded up,checkout_billing_policy
+pull up my saved cars,my_vehicles
+what's the booking time limit,booking_policy
+show revenue for last week,revenue_report
+how do i find a user's pending booking,staff_checkin_process
+promote a user,admin_user_management
+staff check in guide,staff_checkin_process
+tell me a riddle,unknown
+what vehicles do i have on file,my_vehicles
+how many bookings can i have at once,booking_policy
+is there room to park my car,check_availability
+hey hey,greeting
+how do i deactivate a slot,admin_slot_management
+what is the rate for disabled parking,check_availability
+what's our average bill amount,revenue_report
+what's the minimum charge for parking,checkout_billing_policy
+which vehicles are linked to my account,my_vehicles
+how do i update my vehicle's details,vehicle_management
+can you order me a pizza,unknown
+edit vehicle info,vehicle_management
+how do i delete a saved vehicle,vehicle_management
+how do i activate a suspended account,admin_user_management
+give me a summary of registered users,user_registry
+wassup,greeting
+show user counts by role,user_registry
+got any open parking spots,check_availability
+how much did we earn today from parking,revenue_report
+howdy,greeting
+can i cancel my slot before check in,cancellation_policy
+when is my booking,my_bookings
+add a new slot,admin_slot_management
+what's your favorite color,unknown
+use camera for registration number,scan_plate_help
+free slots?,check_availability
+how do i get a receipt,checkout_billing_policy
+how many standard slots are free,check_availability
+deactivate a parking slot,admin_slot_management
+where do i check in,checkin_policy
+how do i close out an active booking as staff,staff_checkout_process
+what's your name,unknown
+thx,thanks
+is there an empty slot i can use,check_availability
+what vehicles are registered to me,my_vehicles
+talk to you later,goodbye
+steps to book a slot,booking_policy
+what's my booking history,my_bookings
+show my bookings,my_bookings
+cancel booking process,cancellation_policy
+is deleting my account reversible,account_management
+change my account email address,account_management
+what happens if i don't check in on time,booking_policy
+what's the average parking session length,occupancy_insights
+breakdown of users staff and admins,user_registry
+how to manage my vehicles,vehicle_management
+goodbye,goodbye
+what's the busiest day of the week,occupancy_insights
+how much have we made so far,revenue_report
+show me available slots,check_availability
+hello there,greeting
+hii,greeting
+tell me a joke,unknown
+what's in the news today,unknown
+can i register a heavy vehicle,vehicle_management
+how does plate scanning work,scan_plate_help
+helloo,greeting
+does check in expire,checkin_policy
+deactivate an account as admin,admin_user_management
+how do i add a new vehicle,vehicle_management
+what do i do to check in,checkin_policy
+when do most people park here,occupancy_insights
+how do i get my booking checked in,checkin_policy
+how do i secure my account,account_management
+what's the availability like,check_availability
+update profile,account_management
+will i be charged if i cancel,cancellation_policy
+what's the score of the game,unknown
+good day to you,greeting
+how many empty slots,check_availability
+show historical occupancy data,occupancy_insights
+billing explained,checkout_billing_policy
+show current slot status,check_availability
+how do i delete my account,account_management
+check if i have a slot booked,my_bookings
+can i find a free slot right now,check_availability
+how do i manage slots as admin,admin_slot_management
+what cars are on my profile,my_vehicles
+how to photograph my plate,scan_plate_help
+how do i change a slot's hourly rate,admin_slot_management
+how to use the camera to add a vehicle,scan_plate_help
+how do i confirm checkout and calculate the bill,staff_checkout_process
+sing me a song,unknown
+how long can i hold a booking before checking in,booking_policy
+what vehicle types are supported,vehicle_management
+process for adding a new vehicle,vehicle_management
+show my last 5 bookings,my_bookings
+show inactive accounts count,user_registry
+can i add a bike and a car both,vehicle_management
+cya,goodbye
+"great, thank you",thanks
+write code for me,unknown
+how do i make a reservation,booking_policy
+what are the peak hours,occupancy_insights
+list all my bookings,my_bookings
+is there a limit on bookings,booking_policy
+how is parking fee calculated,checkout_billing_policy
+how much revenue did we make this month,revenue_report
+can i add a bus or truck,vehicle_management
+update my profile settings,account_management
+does cancelling cost anything,cancellation_policy
+check in console guide for staff,staff_checkin_process
+how do bookings work,booking_policy
+thanks buddy,thanks
+how do i check in a visitor as staff,staff_checkin_process
+which day is busiest for parking,occupancy_insights
+hello again,greeting
+what time is parking least crowded,occupancy_insights
+my current booking,my_bookings
+how old are you,unknown
+how do i verify my new email,account_management
+hi assistant,greeting
+what's the max number of active bookings,booking_policy
+show me my reservations,my_bookings
+hi,greeting
+how many slots are available,check_availability
+how many vehicles have i saved,my_vehicles
+can i download my receipt,checkout_billing_policy
+what's the capital of france,unknown
+can i check myself in,checkin_policy
+any bookings under my name,my_bookings
+"perfect, appreciated",thanks
+what happens if i cancel a booking,cancellation_policy
+any disabled slots available,check_availability
+how do i cancel my booking,cancellation_policy
+how do i remove a saved vehicle,vehicle_management
+hello,greeting
+auto fill registration number,scan_plate_help
+leaving now,goodbye
+how many active users are there,user_registry
+staff checkout console instructions,staff_checkout_process
+who created you,unknown
+how do i promote a user to staff,admin_user_management
+how do i update account settings,account_management
+as staff how do i process a checkout,staff_checkout_process
+brilliant thank you,thanks
+hey,greeting
+how is check-in done,checkin_policy
+how does demand change during the day,occupancy_insights
+cancel my reservation,cancellation_policy
+can i book multiple slots at once,booking_policy
+show me the revenue report,revenue_report
+total earnings from bookings,revenue_report
+morning assistant,greeting
+how do i deactivate a user account,admin_user_management
+admin guide to managing users,admin_user_management
+ttyl,goodbye
+thank u,thanks
+hey assistant,greeting
+awesome thanks,thanks
+booking rules,booking_policy
+how to cancel a reservation,cancellation_policy
+exiting now bye,goodbye
+can i update my name on my profile,account_management
+how to check in a user's car,staff_checkin_process
+show earnings between these dates,revenue_report
+who checks me out,checkout_billing_policy
+how many staff members are there,user_registry
+explain the checkout and billing process,checkout_billing_policy
+give me the busy times for parking,occupancy_insights
+who checks me in,checkin_policy
+can you write my essay,unknown
+which slots are used the most,occupancy_insights
+what's your opinion on politics,unknown
+processing a checkout as staff,staff_checkout_process
+see you around,goodbye
+how many accounts are active vs inactive,user_registry
+revenue report for this quarter,revenue_report
+explain how to reserve parking,booking_policy
+add a vehicle,vehicle_management
+what vehicle categories exist,vehicle_management
+check in steps,checkin_policy
+slots available,check_availability
+hi there assistant,greeting
+what hours should i avoid,occupancy_insights
+what's the total income from parking,revenue_report
+check my own parking history,my_bookings
+help me with my homework,unknown
+is there a free ev slot,check_availability
+hi im back,greeting
+any active reservation for me,my_bookings
+what's the weather today,unknown
+what happens after i'm checked in,checkin_policy
+are you conscious,unknown
+least busy time to park,occupancy_insights
+as staff how do i process a check in,staff_checkin_process
+can i book a slot in advance,booking_policy
+the plate scanner isn't reading my plate,scan_plate_help
+what time is it in tokyo,unknown
+steps to cancel my slot,cancellation_policy
+how many ev slots are open,check_availability
+how do i make someone an admin,admin_user_management
+can i save multiple vehicles,vehicle_management
+thanks a lot,thanks
+how do i change my password,account_management
+change my name,account_management
+when's the best time to come park,occupancy_insights
+how do i edit my display name,account_management
+is parking full,check_availability
+view my vehicles,my_vehicles
+show my cars,my_vehicles
+is there any parking available right now,check_availability
+what's on my vehicle list,my_vehicles
+how do i mark registration pending for a new bike,vehicle_management
+how many people use the system,user_registry
 how do i change a user's role,admin_user_management
 admin guide to managing slots,admin_slot_management
-"great, thank you",thanks
-how much does faculty parking cost per hour,check_availability
-staff check in console instructions,staff_checkin_process
-give me usage patterns,occupancy_insights
-my vehicle has no registration number yet,vehicle_management
-what's the hourly rate for standard slots,check_availability
-where do i check in,checkin_policy
-how do i confirm check in for a user,staff_checkin_process
-thanks,thanks
-how do i get a receipt,checkout_billing_policy
-check slot availability,check_availability
-can i schedule a booking for tomorrow,booking_policy
-my current booking,my_bookings
-how to change my profile photo,account_management
-can i cancel an active booking,cancellation_policy
-will i be charged if i cancel,cancellation_policy
-how do i verify my new email,account_management
-when should i avoid coming to park,occupancy_insights
-how long can i hold a booking before checking in,booking_policy
-appreciate it,thanks
-check my own parking history,my_bookings
-goodbye,goodbye
-give me the user breakdown by role,user_registry
-what's our average bill amount,revenue_report
-can i download my receipt,checkout_billing_policy
-greetings,greeting
-how do i mark registration pending for a new bike,vehicle_management
-what time is parking least crowded,occupancy_insights
-is there a cancellation fee,cancellation_policy
-check my booking status,my_bookings
-how do i deactivate a user account,admin_user_management
-what vehicle did i use for my last booking,my_bookings
-cool thanks,thanks
-show my saved vehicles,my_vehicles
-thanks for the help,thanks
-thanks buddy,thanks
-show my recent reservations,my_bookings
-what vehicle types are supported,vehicle_management
-how do i close out an active booking as staff,staff_checkout_process
-show current slot status,check_availability
-that's all bye,goodbye
-what's in the news today,unknown
-any bookings under my name,my_bookings
+thanks man,thanks
 what's the meaning of life,unknown
-show my bookings,my_bookings
-good morning,greeting
-what happens if i don't check in on time,booking_policy
-auto fill registration number,scan_plate_help
-pull up my saved cars,my_vehicles
+how tall is mount everest,unknown
+do i have any active bookings,my_bookings
+any slots left for bikes,check_availability
 how do i manage account security,account_management
+hello can you help me,greeting
+thank you,thanks
+camera scan help,scan_plate_help
+what's the hourly rate for standard slots,check_availability
+what happens when i check out,checkout_billing_policy
+list vehicles on my account,my_vehicles
+my vehicle has no registration number yet,vehicle_management
+what kinds of vehicles can i register,vehicle_management
+what's the status of my booking,my_bookings
+explain the check-in process,checkin_policy
+thanks for the help,thanks
+check my car registration,my_vehicles
+bye bye,goodbye
+how does check in work,checkin_policy
+how does booking work,booking_policy
+checking in bookings as staff,staff_checkin_process
+good morning assistant,greeting
+what times are the busiest,occupancy_insights
+what's my final bill,checkout_billing_policy
 check my registered vehicles,my_vehicles
+show vehicles i've added,my_vehicles
+thnx,thanks
+list my saved cars and bikes,my_vehicles
+translate this sentence to spanish,unknown
+who won the world cup,unknown
+show my saved vehicles,my_vehicles
+how do i mark a slot as ev charging,admin_slot_management
+how full is the parking lot,check_availability
+im off,goodbye
+change someone's role,admin_user_management
+list my vehicles,my_vehicles
+write me a poem,unknown
+scan my number plate automatically,scan_plate_help
+ok i'm done thanks bye,goodbye
+how do i edit slot type or location,admin_slot_management
+good morning,greeting
+average time people stay parked,occupancy_insights
+minimum billing time for parking,checkout_billing_policy
+how many total accounts,user_registry
+what's open right now,check_availability
+total revenue generated,revenue_report
+how do i cook pasta,unknown
+plate scan not working,scan_plate_help
+how do i update my profile picture,account_management
+steps for staff to check someone in,staff_checkin_process
+how many slots are occupied right now,check_availability
+how do i check in,checkin_policy
 hi there!,greeting
-how do i activate a suspended account,admin_user_management
-how much money did parking generate,revenue_report
-what's on my vehicle list,my_vehicles
-how many ev slots are open,check_availability
+how do i pay for parking,checkout_billing_policy
+is there a cancellation fee,cancellation_policy
+how much per hour for standard,check_availability
+any spots open right now,check_availability
+tysm,thanks
 hello parking assistant,greeting
 sup,greeting
-change my account email address,account_management
-show me available slots,check_availability
-what slots are open right now,check_availability
-which slots are used the most,occupancy_insights
-how much revenue did we make this month,revenue_report
-how much did we earn today from parking,revenue_report
-can i book a slot in advance,booking_policy
+monthly revenue breakdown,revenue_report
+how much for 1 hour 10 minutes of parking,checkout_billing_policy
+much appreciated,thanks
+how do i check in my vehicle,checkin_policy
+what's the best programming language,unknown
+can i change my login email,account_management
+you're a lifesaver thanks,thanks
+steps for staff to check someone out,staff_checkout_process
+ok bye,goodbye
+can i park here right now,check_availability
+show me occupancy trends,occupancy_insights
+busiest time of day for parking,occupancy_insights
+checkout console guide for staff,staff_checkout_process
 hey bot,greeting
-are there any open ev charging slots,check_availability
+thanks so much for the info,thanks
+how many vehicles can i save,vehicle_management

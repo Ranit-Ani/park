@@ -224,14 +224,30 @@ class BookingService {
   }
 
   /**
-   * Get all bookings for a user
+   * Get bookings for a user, paginated.
    * @param {string} userId
-   * @returns {Promise<Booking[]>}
+   * @param {object} [opts]
+   * @param {number} [opts.page=1]
+   * @param {number} [opts.limit=20]
+   * @param {string} [opts.status] - optional status filter
+   * @returns {Promise<{bookings: Booking[], total: number}>}
    */
-  async getUserBookings(userId) {
-    return Booking.find({ userId })
-      .populate('slotId', 'slotNumber location floor slotType hourlyRate')
-      .sort({ createdAt: -1 });
+  async getUserBookings(userId, opts = {}) {
+    const { page = 1, limit = 20, status } = opts;
+    const skip = (page - 1) * limit;
+    const query = { userId };
+    if (status) query.status = status;
+
+    const [bookings, total] = await Promise.all([
+      Booking.find(query)
+        .populate('slotId', 'slotNumber location floor slotType hourlyRate')
+        .sort({ createdAt: -1 })
+        .skip(skip)
+        .limit(limit),
+      Booking.countDocuments(query),
+    ]);
+
+    return { bookings, total };
   }
 
   /**

@@ -23,6 +23,19 @@ from prediction.predict import predict_intent, ModelNotTrainedError  # noqa: E40
 
 app = Flask(__name__)
 
+# ─── Warm-up ────────────────────────────────────────────────────────────────
+# predict_intent() lazily unpickles the vectorizer + classifier on its first
+# call, which pulls in scikit-learn's class machinery and takes ~4-5s. If we
+# let that happen on the user's first real chat message, the app *looks*
+# frozen for several seconds. Instead we pay that cost once here, at process
+# boot, while Node is still starting up MongoDB etc — so by the time anyone
+# actually opens the chat widget, prediction is already fast (~1ms).
+try:
+    predict_intent("warm up")
+    print("[ai] model warmed up and ready.", flush=True)
+except ModelNotTrainedError:
+    print("[ai] model not trained yet — run training/train.py.", flush=True)
+
 # Restrict to local calls from the Node backend only. In production these
 # two processes run on the same host/container, so this API is never
 # exposed publicly — see README for the deployment note.

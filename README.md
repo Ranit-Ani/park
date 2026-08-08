@@ -6,7 +6,8 @@ A full-stack campus parking management system with real-time slot booking, staff
 
 ## 🚀 Live Demo
 
-> **URL:** *https://park-cw1w.onrender.com*
+**URL:** *https://car-parking-app-xofv.onrender.com*
+
 
 ---
 
@@ -16,7 +17,6 @@ A full-stack campus parking management system with real-time slot booking, staff
 |-------|-----------|
 | Frontend | React 19, React Router, Vite, Bootstrap 5 (icons/utility classes), Three.js, Chart.js |
 | Backend | Node.js, Express.js |
-| AI Assistant | Self-hosted TF-IDF + Logistic Regression intent classifier (`ai/`) — no external LLM API key |
 | Database | MongoDB Atlas |
 | Auth | JWT + OTP Email Verification |
 | Email | Brevo (SMTP relay + API) |
@@ -40,18 +40,6 @@ cd campus-parking
 ```bash
 cd backend && npm install
 ```
-
-### 2b. Train the AI model (one-time, or after editing training data)
-```bash
-cd ai
-pip install -r requirements.txt --break-system-packages
-python dataset/build_dataset.py
-python training/train.py
-```
-See `ai/README.md` for details. The Node backend auto-starts the model's
-Python API as a child process (`backend/utils/aiProcess.js`) — no separate
-service or deployment needed, and `/api/ai/*` just returns a 503 until
-you've trained it once.
 
 ### 3. Create your .env file
 ```bash

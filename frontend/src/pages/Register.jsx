@@ -1,6 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import ThreeBackground from '../components/ThreeBackground';
 import Alert from '../components/Alert';
 import OtpInput from '../components/OtpInput';
 import { ActionButton } from '../components/Bits';
@@ -120,10 +119,9 @@ export default function Register() {
 
   return (
     <>
-      <ThreeBackground />
       <div className="auth-wrapper">
         <div style={{ width: '100%', maxWidth: 420 }}>
-          <Link to="/login" style={{ display: 'inline-flex', alignItems: 'center', gap: '.4rem', fontSize: '.8rem', color: 'var(--t2)', textDecoration: 'none', marginBottom: '1.2rem', fontFamily: "'Syne',sans-serif", letterSpacing: '.08em' }}>
+          <Link to="/login" style={{ display: 'inline-flex', alignItems: 'center', gap: '.4rem', fontSize: '.8rem', color: 'var(--t2)', textDecoration: 'none', marginBottom: '1.2rem', fontFamily: "'Inter',sans-serif", letterSpacing: '.08em' }}>
             <i className="bi bi-arrow-left" /> BACK TO LOGIN
           </Link>
 
@@ -165,7 +163,7 @@ export default function Register() {
                       <input className="ag-input" type="password" placeholder="Min 6 characters" required minLength={6} value={password} onChange={(e) => setPassword(e.target.value)} />
                     </div>
                     <div className="pwd-strength" style={{ width: strength.w, background: strength.c }} />
-                    <div style={{ fontSize: '.68rem', color: strength.c, fontFamily: "'Syne',sans-serif" }}>{strength.t}</div>
+                    <div style={{ fontSize: '.68rem', color: strength.c, fontFamily: "'Inter',sans-serif" }}>{strength.t}</div>
                   </div>
                   <div className="ag-input-group">
                     <label className="ag-label">Confirm Password</label>
@@ -188,10 +186,10 @@ export default function Register() {
             {step === 2 && (
               <div className="step active">
                 <div style={{ textAlign: 'center', marginBottom: '1.5rem' }}>
-                  <div style={{ width: 52, height: 52, borderRadius: '50%', background: 'rgba(0,255,179,.1)', border: '2px solid rgba(0,255,179,.25)', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto .8rem', fontSize: '1.3rem', color: 'var(--aurora)' }}>
+                  <div style={{ width: 52, height: 52, borderRadius: '50%', background: 'rgba(79,145,99,.1)', border: '2px solid rgba(79,145,99,.25)', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto .8rem', fontSize: '1.3rem', color: 'var(--aurora)' }}>
                     <i className="bi bi-envelope-open" />
                   </div>
-                  <div style={{ fontFamily: "'Exo 2',sans-serif", fontSize: '.88rem', fontWeight: 700, color: 'var(--t1)', marginBottom: '.3rem' }}>Check Your Inbox</div>
+                  <div style={{ fontFamily: "'Inter',sans-serif", fontSize: '.88rem', fontWeight: 700, color: 'var(--t1)', marginBottom: '.3rem' }}>Check Your Inbox</div>
                   <div style={{ fontSize: '.8rem', color: 'var(--t2)' }}>We sent a 6-digit code to</div>
                   <div style={{ fontSize: '.88rem', color: 'var(--plasma)', fontWeight: 600, marginTop: '.2rem' }}>{email}</div>
                 </div>
@@ -203,12 +201,12 @@ export default function Register() {
 
                 <div style={{ textAlign: 'center', marginBottom: '1.2rem' }}>
                   {!expired ? (
-                    <div style={{ fontFamily: "'Syne',sans-serif", fontSize: '.72rem', color: 'var(--t2)', letterSpacing: '.08em' }}>
+                    <div style={{ fontFamily: "'Inter',sans-serif", fontSize: '.72rem', color: 'var(--t2)', letterSpacing: '.08em' }}>
                       CODE EXPIRES IN <span style={{ color: 'var(--solar)' }}>{mm}:{ss}</span>
                     </div>
                   ) : (
                     <>
-                      <div style={{ fontFamily: "'Syne',sans-serif", fontSize: '.72rem', letterSpacing: '.08em' }}>
+                      <div style={{ fontFamily: "'Inter',sans-serif", fontSize: '.72rem', letterSpacing: '.08em' }}>
                         <span style={{ color: 'var(--nova)' }}>CODE EXPIRED</span>
                       </div>
                       <button className="btn-ag ghost sm" style={{ marginTop: '.5rem' }} onClick={resendOTP}>

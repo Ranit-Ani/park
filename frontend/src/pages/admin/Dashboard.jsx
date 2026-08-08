@@ -15,31 +15,25 @@ const empty = {
 export default function AdminDashboard() {
   const { user } = useAuth();
   const [d, setD] = useState(empty);
-  const [insights, setInsights] = useState(null);
 
   const load = useCallback(async () => {
     const res = await apiRequest('/admin/dashboard');
     if (res && res.success) setD(res.data);
   }, []);
 
-  const loadInsights = useCallback(async () => {
-    const res = await apiRequest('/admin/analytics/occupancy');
-    if (res && res.success) setInsights(res.data);
-  }, []);
-
   useEffect(() => {
     load();
-    loadInsights();
 
     // Live sync: refresh stats the moment a booking/slot/revenue event
     // happens anywhere in the system, and pop a toast for visibility
     // (like a Facebook-style notification) while the admin is on this page.
     const socket = getSocket();
     const refresh = () => load();
-    const onNewBooking = () => { showToast('New booking placed', 'info'); load(); loadInsights(); };
+    const onNewBooking = () => { showToast('New booking placed', 'info'); load(); };
     const onRevenue = ({ amount }) => { showToast(`Payment received: ₹${amount}`, 'success'); load(); };
 
     socket.on('slotUpdated', refresh);
+    socket.on('slotDeleted', refresh);
     socket.on('bookingCreated', onNewBooking);
     socket.on('bookingUpdated', refresh);
     socket.on('revenueUpdated', onRevenue);
@@ -49,18 +43,13 @@ export default function AdminDashboard() {
     return () => {
       clearInterval(t);
       socket.off('slotUpdated', refresh);
+      socket.off('slotDeleted', refresh);
       socket.off('bookingCreated', onNewBooking);
       socket.off('bookingUpdated', refresh);
       socket.off('revenueUpdated', onRevenue);
       socket.off('userUpdated', refresh);
     };
-  }, [load, loadInsights]);
-
-  function hourLabel(h) {
-    const period = h < 12 ? 'AM' : 'PM';
-    const h12 = h % 12 === 0 ? 12 : h % 12;
-    return `${h12} ${period}`;
-  }
+  }, [load]);
 
   return (
     <Layout title="Command Dashboard" badge="Administrator">
@@ -138,57 +127,6 @@ export default function AdminDashboard() {
           </div>
         </div>
       </div>
-
-      {insights && (
-        <div className="ag-card" style={{ padding: '1.5rem', marginTop: '1.25rem' }}>
-          <div style={{ fontFamily: 'Orbitron,monospace', fontSize: '0.75rem', letterSpacing: '0.1em', color: 'var(--text-muted)', marginBottom: '1.25rem', display: 'flex', alignItems: 'center', gap: '.5rem' }}>
-            <i className="bi bi-stars" style={{ color: 'var(--plasma)' }} /> DEMAND INSIGHTS <span style={{ opacity: .6, fontWeight: 400, textTransform: 'none', letterSpacing: 0 }}>(last {insights.windowDays} days)</span>
-          </div>
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(220px,1fr))', gap: '1rem' }}>
-            <div>
-              <div style={{ fontSize: '0.72rem', color: 'var(--text-muted)', marginBottom: '0.5rem', textTransform: 'uppercase', letterSpacing: '0.08em' }}>Peak Hours</div>
-              {insights.peakHours.length === 0 ? <p style={{ fontSize: '.8rem', color: 'var(--text-muted)' }}>Not enough data yet.</p> : (
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '.4rem' }}>
-                  {insights.peakHours.map((h) => (
-                    <div key={h.hour} style={{ display: 'flex', justifyContent: 'space-between', fontSize: '.82rem' }}>
-                      <span>{hourLabel(h.hour)}</span><span className="ag-badge occupied">{h.count} bookings</span>
-                    </div>
-                  ))}
-                </div>
-              )}
-            </div>
-            <div>
-              <div style={{ fontSize: '0.72rem', color: 'var(--text-muted)', marginBottom: '0.5rem', textTransform: 'uppercase', letterSpacing: '0.08em' }}>Busiest Days</div>
-              {insights.busiestDays.length === 0 ? <p style={{ fontSize: '.8rem', color: 'var(--text-muted)' }}>Not enough data yet.</p> : (
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '.4rem' }}>
-                  {insights.busiestDays.slice(0, 3).map((d2) => (
-                    <div key={d2.day} style={{ display: 'flex', justifyContent: 'space-between', fontSize: '.82rem' }}>
-                      <span>{d2.day}</span><span className="ag-badge available">{d2.count} bookings</span>
-                    </div>
-                  ))}
-                </div>
-              )}
-            </div>
-            <div>
-              <div style={{ fontSize: '0.72rem', color: 'var(--text-muted)', marginBottom: '0.5rem', textTransform: 'uppercase', letterSpacing: '0.08em' }}>Most-Used Slots</div>
-              {insights.topSlots.length === 0 ? <p style={{ fontSize: '.8rem', color: 'var(--text-muted)' }}>Not enough data yet.</p> : (
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '.4rem' }}>
-                  {insights.topSlots.slice(0, 3).map((s) => (
-                    <div key={s._id} style={{ display: 'flex', justifyContent: 'space-between', fontSize: '.82rem' }}>
-                      <span>{s.slotNumber || '—'} <span style={{ color: 'var(--text-muted)' }}>· {s.location}</span></span><span className="ag-badge booked">{s.count}×</span>
-                    </div>
-                  ))}
-                </div>
-              )}
-            </div>
-          </div>
-          {insights.avgSessionMinutes !== null && (
-            <div style={{ marginTop: '1.1rem', fontSize: '.78rem', color: 'var(--text-muted)' }}>
-              Average parking session: <strong style={{ color: 'var(--t1)' }}>{Math.round(insights.avgSessionMinutes / 60 * 10) / 10}h</strong>
-            </div>
-          )}
-        </div>
-      )}
     </Layout>
   );
 }

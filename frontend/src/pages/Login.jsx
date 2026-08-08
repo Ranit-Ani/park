@@ -1,6 +1,5 @@
 import { useEffect, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import ThreeBackground from '../components/ThreeBackground';
 import Alert from '../components/Alert';
 import Modal from '../components/Modal';
 import OtpInput from '../components/OtpInput';
@@ -85,10 +84,9 @@ export default function Login() {
 
   return (
     <>
-      <ThreeBackground />
       <div className="auth-wrapper">
         <div style={{ width: '100%', maxWidth: 420 }}>
-          <Link to="/" style={{ display: 'inline-flex', alignItems: 'center', gap: '.4rem', fontSize: '.8rem', color: 'var(--t2)', textDecoration: 'none', marginBottom: '1.2rem', fontFamily: "'Syne',sans-serif", letterSpacing: '.08em' }}>
+          <Link to="/" style={{ display: 'inline-flex', alignItems: 'center', gap: '.4rem', fontSize: '.8rem', color: 'var(--t2)', textDecoration: 'none', marginBottom: '1.2rem', fontFamily: "'Inter',sans-serif", letterSpacing: '.08em' }}>
             <i className="bi bi-arrow-left" /> BACK TO BASE
           </Link>
 
@@ -127,7 +125,7 @@ export default function Login() {
                   </button>
                 </div>
                 <div style={{ textAlign: 'right', marginTop: '.4rem' }}>
-                  <a href="#" onClick={(e) => { e.preventDefault(); openForgot(); }} style={{ fontSize: '.76rem', color: 'rgba(0,240,255,.6)', textDecoration: 'none', fontFamily: "'Syne',sans-serif", letterSpacing: '.05em' }}>
+                  <a href="#" onClick={(e) => { e.preventDefault(); openForgot(); }} style={{ fontSize: '.76rem', color: 'rgba(74,122,181,.75)', textDecoration: 'none', fontFamily: "'Inter',sans-serif", letterSpacing: '.05em' }}>
                     Forgot password?
                   </a>
                 </div>
@@ -199,7 +197,7 @@ export default function Login() {
               <i className="bi bi-shield-check" /> Reset Password
             </ActionButton>
             <div style={{ textAlign: 'center', marginTop: '.7rem' }}>
-              <a href="#" onClick={(e) => { e.preventDefault(); setFpStep(1); fpSend(); }} style={{ fontSize: '.76rem', color: 'rgba(0,240,255,.6)', textDecoration: 'none', fontFamily: "'Syne',sans-serif", letterSpacing: '.04em' }}>
+              <a href="#" onClick={(e) => { e.preventDefault(); setFpStep(1); fpSend(); }} style={{ fontSize: '.76rem', color: 'rgba(74,122,181,.75)', textDecoration: 'none', fontFamily: "'Inter',sans-serif", letterSpacing: '.04em' }}>
                 <i className="bi bi-arrow-clockwise" style={{ fontSize: '.7rem' }} /> Resend code
               </a>
             </div>

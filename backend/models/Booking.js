@@ -151,8 +151,8 @@ BookingSchema.statics.getDailyRevenue = async function (days = 7) {
 };
 
 // ─── Static: Occupancy insights (peak hours / days / busiest slots) ──────────
-// Feeds both the admin analytics card and the AI assistant's tools, so the
-// model owns the aggregation once instead of duplicating it in a service.
+// Feeds the AI assistant's get_occupancy_insights tool, so the model owns the
+// aggregation once instead of duplicating it elsewhere.
 BookingSchema.statics.getOccupancyInsights = async function (days = 90) {
   const start = new Date();
   start.setDate(start.getDate() - days);

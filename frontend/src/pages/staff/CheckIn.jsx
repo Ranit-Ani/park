@@ -5,7 +5,6 @@ import Modal from '../../components/Modal';
 import { ActionButton, EmptyState } from '../../components/Bits';
 import { apiRequest } from '../../lib/api';
 import { formatDateTime } from '../../lib/utils';
-import { getSocket } from '../../lib/socket';
 
 export default function CheckIn() {
   const [all, setAll] = useState([]);
@@ -15,33 +14,14 @@ export default function CheckIn() {
   const [busy, setBusy] = useState(false);
 
   const load = useCallback(async () => {
-    const d = await apiRequest('/staff/bookings/all?status=Booked');
+    const d = await apiRequest('/staff/bookings/all?status=Booked&limit=100');
     if (d && d.success) setAll(d.data);
   }, []);
 
   useEffect(() => {
     load();
-
-    // Live sync: a new booking appears here the instant a user books, and
-    // one already on this screen disappears the instant it's checked in
-    // (by another staff member), cancelled, or auto-expired — no manual
-    // refresh needed.
-    const socket = getSocket();
-    socket.on('bookingCreated', load);
-    socket.on('bookingUpdated', load);
-    socket.on('bookingCancelled', load);
-    socket.on('bookingExpired', load);
-
-    // Safety-net poll in case a socket event is ever missed.
     const t = setInterval(load, 30000);
-
-    return () => {
-      clearInterval(t);
-      socket.off('bookingCreated', load);
-      socket.off('bookingUpdated', load);
-      socket.off('bookingCancelled', load);
-      socket.off('bookingExpired', load);
-    };
+    return () => clearInterval(t);
   }, [load]);
 
   const rows = useMemo(() => {

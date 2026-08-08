@@ -15,7 +15,7 @@ export default function StaffDashboard() {
   const [bill, setBill] = useState(null);
 
   const load = useCallback(async () => {
-    const [s, bk] = await Promise.all([apiRequest('/slots/stats'), apiRequest('/staff/bookings')]);
+    const [s, bk] = await Promise.all([apiRequest('/slots/stats'), apiRequest('/staff/bookings?limit=100')]);
     if (s && s.success) setStats(s.data);
     if (bk && bk.success) setRows(bk.data);
   }, []);
@@ -28,6 +28,7 @@ export default function StaffDashboard() {
     const socket = getSocket();
     const onNewBooking = () => { showToast('New booking placed by a user', 'info'); load(); };
     socket.on('slotUpdated', load);
+    socket.on('slotDeleted', load);
     socket.on('bookingCreated', onNewBooking);
     socket.on('bookingUpdated', load);
 
@@ -35,6 +36,7 @@ export default function StaffDashboard() {
     return () => {
       clearInterval(t);
       socket.off('slotUpdated', load);
+      socket.off('slotDeleted', load);
       socket.off('bookingCreated', onNewBooking);
       socket.off('bookingUpdated', load);
     };

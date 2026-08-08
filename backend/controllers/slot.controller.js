@@ -1,46 +1,71 @@
 const ParkingSlot = require('../models/ParkingSlot');
-const Booking = require('../models/Booking');
 
 /**
  * SlotController - Handles parking slot operations for users
  */
 class SlotController {
-  // GET /api/slots - Get all available slots
+  // GET /api/slots - Get all available slots (paginated)
   async getAvailableSlots(req, res, next) {
     try {
       const { type, location } = req.query;
-      const filter = { status: 'Available', isActive: true };
+      const page = Math.max(1, Number(req.query.page) || 1);
+      const limit = Math.min(100, Math.max(1, Number(req.query.limit) || 30));
+      const skip = (page - 1) * limit;
 
+      const filter = { status: 'Available', isActive: true };
       if (type) filter.slotType = type;
       if (location) filter.location = new RegExp(location, 'i');
 
-      const slots = await ParkingSlot.find(filter).sort({ slotNumber: 1 });
+      const [slots, total] = await Promise.all([
+        ParkingSlot.find(filter).sort({ slotNumber: 1 }).skip(skip).limit(limit),
+        ParkingSlot.countDocuments(filter),
+      ]);
 
       res.json({
         success: true,
         count: slots.length,
         data: slots,
+        page,
+        limit,
+        total,
+        pages: Math.ceil(total / limit),
+        hasMore: skip + slots.length < total,
       });
     } catch (err) {
       next(err);
     }
   }
 
-  // GET /api/slots/all - Get all slots (with status)
+  // GET /api/slots/all - Get all slots (with status), paginated
   async getAllSlots(req, res, next) {
     try {
-      const { status, type } = req.query;
-      const filter = { isActive: true };
+      const { status, type, search } = req.query;
+      const page = Math.max(1, Number(req.query.page) || 1);
+      const limit = Math.min(100, Math.max(1, Number(req.query.limit) || 30));
+      const skip = (page - 1) * limit;
 
+      const filter = { isActive: true };
       if (status) filter.status = status;
       if (type) filter.slotType = type;
+      if (search) {
+        const re = new RegExp(search.trim().replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'i');
+        filter.$or = [{ slotNumber: re }, { location: re }, { floor: re }];
+      }
 
-      const slots = await ParkingSlot.find(filter).sort({ slotNumber: 1 });
+      const [slots, total] = await Promise.all([
+        ParkingSlot.find(filter).sort({ slotNumber: 1 }).skip(skip).limit(limit),
+        ParkingSlot.countDocuments(filter),
+      ]);
 
       res.json({
         success: true,
         count: slots.length,
         data: slots,
+        page,
+        limit,
+        total,
+        pages: Math.ceil(total / limit),
+        hasMore: skip + slots.length < total,
       });
     } catch (err) {
       next(err);
@@ -65,24 +90,6 @@ class SlotController {
     try {
       const stats = await ParkingSlot.getSlotStats();
       res.json({ success: true, data: stats });
-    } catch (err) {
-      next(err);
-    }
-  }
-
-  // GET /api/slots/insights - Peak/quiet hours for users deciding when to book.
-  // Deliberately a trimmed-down subset of the admin analytics (no revenue data).
-  async getInsights(req, res, next) {
-    try {
-      const full = await Booking.getOccupancyInsights();
-      res.json({
-        success: true,
-        data: {
-          peakHours: full.peakHours,
-          quietHours: full.quietHours,
-          busiestDays: full.busiestDays.slice(0, 2),
-        },
-      });
     } catch (err) {
       next(err);
     }

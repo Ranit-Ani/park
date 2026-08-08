@@ -36,29 +36,45 @@ class StaffController {
     }
   }
 
-  // GET /api/staff/bookings - All active bookings
+  // GET /api/staff/bookings - All active bookings (paginated)
   async getActiveBookings(req, res, next) {
     try {
-      const bookings = await StaffService.getActiveBookings();
+      const page = Math.max(1, Number(req.query.page) || 1);
+      const limit = Math.min(100, Math.max(1, Number(req.query.limit) || 30));
+
+      const { bookings, total } = await StaffService.getActiveBookings({ page, limit });
       res.json({
         success: true,
         count: bookings.length,
         data: bookings,
+        page,
+        limit,
+        total,
+        pages: Math.ceil(total / limit),
+        hasMore: (page - 1) * limit + bookings.length < total,
       });
     } catch (err) {
       next(err);
     }
   }
 
-  // GET /api/staff/bookings/all
+  // GET /api/staff/bookings/all (paginated)
   async getAllBookings(req, res, next) {
     try {
       const { status, date } = req.query;
-      const bookings = await StaffService.getAllBookings({ status, date });
+      const page = Math.max(1, Number(req.query.page) || 1);
+      const limit = Math.min(100, Math.max(1, Number(req.query.limit) || 30));
+
+      const { bookings, total } = await StaffService.getAllBookings({ status, date, page, limit });
       res.json({
         success: true,
         count: bookings.length,
         data: bookings,
+        page,
+        limit,
+        total,
+        pages: Math.ceil(total / limit),
+        hasMore: (page - 1) * limit + bookings.length < total,
       });
     } catch (err) {
       next(err);

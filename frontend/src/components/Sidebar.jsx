@@ -126,7 +126,7 @@ export default function Sidebar({ open, onNavigate }) {
             {user.profilePhoto ? (
               <img src={user.profilePhoto} alt="" style={{ width: 120, height: 120, borderRadius: '50%', objectFit: 'cover', border: '3px solid rgba(200,200,200,.4)', marginBottom: '1rem', display: 'block', marginLeft: 'auto', marginRight: 'auto' }} />
             ) : (
-              <div style={{ width: 120, height: 120, borderRadius: '50%', background: 'linear-gradient(135deg,#6c63ff,#00f0ff)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '2.8rem', fontWeight: 700, color: 'white', margin: '0 auto 1rem', border: '3px solid rgba(200,200,200,.3)' }}>
+              <div style={{ width: 120, height: 120, borderRadius: '50%', background: 'linear-gradient(135deg,#6f6690,#4a7ab5)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '2.8rem', fontWeight: 700, color: 'white', margin: '0 auto 1rem', border: '3px solid rgba(200,200,200,.3)' }}>
                 {user.name.charAt(0).toUpperCase()}
               </div>
             )}
@@ -135,7 +135,7 @@ export default function Sidebar({ open, onNavigate }) {
             <NavLink
               to="/profile"
               onClick={() => setShowPreview(false)}
-              style={{ display: 'inline-flex', alignItems: 'center', gap: '.4rem', background: 'rgba(200,200,200,.1)', border: '1px solid rgba(200,200,200,.25)', color: '#00f0ff', padding: '.45rem 1.2rem', borderRadius: 8, fontSize: '.82rem', textDecoration: 'none' }}
+              style={{ display: 'inline-flex', alignItems: 'center', gap: '.4rem', background: 'rgba(200,200,200,.1)', border: '1px solid rgba(200,200,200,.25)', color: '#4a7ab5', padding: '.45rem 1.2rem', borderRadius: 8, fontSize: '.82rem', textDecoration: 'none' }}
             >
               <i className="bi bi-person-gear" /> Edit Profile
             </NavLink>

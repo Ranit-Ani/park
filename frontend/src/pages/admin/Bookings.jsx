@@ -1,42 +1,44 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import Layout from '../../components/Layout';
+import InfiniteSentinel from '../../components/InfiniteSentinel';
 import { StatusBadge, EmptyState } from '../../components/Bits';
-import { apiRequest } from '../../lib/api';
+import { useInfiniteList } from '../../lib/useInfiniteList';
 import { formatDate, formatDateTime } from '../../lib/utils';
 import { getSocket } from '../../lib/socket';
 
 const COLORS = { Booked: 'booked', Active: 'active', Completed: 'completed', Cancelled: 'cancelled', Expired: 'expired' };
 
 export default function AdminBookings() {
-  const [all, setAll] = useState([]);
   const [fStatus, setFStatus] = useState('');
   const [fDate, setFDate] = useState('');
   const [search, setSearch] = useState('');
 
-  const load = useCallback(async () => {
-    let url = '/staff/bookings/all?';
-    if (fStatus) url += 'status=' + fStatus + '&';
-    if (fDate) url += 'date=' + fDate;
-    const d = await apiRequest(url);
-    if (d && d.success) setAll(d.data);
+  const buildUrl = useCallback((page, limit) => {
+    let url = `/staff/bookings/all?page=${page}&limit=${limit}`;
+    if (fStatus) url += '&status=' + fStatus;
+    if (fDate) url += '&date=' + fDate;
+    return url;
   }, [fStatus, fDate]);
 
-  useEffect(() => {
-    load();
+  // Bookings load a page at a time (status/date filtered server-side) and
+  // grow as the admin scrolls, instead of pulling the entire registry.
+  const { items: all, loading, loadingMore, hasMore, loadMore, refresh, total } =
+    useInfiniteList(buildUrl, [fStatus, fDate], 30);
 
+  useEffect(() => {
     // Live sync: refresh the list the moment any booking is created,
     // checked in/out, or cancelled — by anyone, anywhere.
     const socket = getSocket();
-    socket.on('bookingCreated', load);
-    socket.on('bookingUpdated', load);
-    socket.on('bookingCancelled', load);
+    socket.on('bookingCreated', refresh);
+    socket.on('bookingUpdated', refresh);
+    socket.on('bookingCancelled', refresh);
 
     return () => {
-      socket.off('bookingCreated', load);
-      socket.off('bookingUpdated', load);
-      socket.off('bookingCancelled', load);
+      socket.off('bookingCreated', refresh);
+      socket.off('bookingUpdated', refresh);
+      socket.off('bookingCancelled', refresh);
     };
-  }, [load]);
+  }, [refresh]);
 
   const counts = useMemo(() => {
     const c = { Booked: 0, Active: 0, Completed: 0, Cancelled: 0, Expired: 0 };
@@ -44,6 +46,10 @@ export default function AdminBookings() {
     return c;
   }, [all]);
 
+  // Search filters the rows already loaded into memory. Because results
+  // load incrementally, a search term may not match rows further down
+  // that haven't been fetched yet — scroll to load more, or clear the
+  // status/date filters to narrow the server-side query instead.
   const rows = useMemo(() => {
     const q = search.toLowerCase();
     if (!q) return all;
@@ -80,12 +86,17 @@ export default function AdminBookings() {
       </div>
 
       <div className="table-card">
-        <div className="tc-header"><h6>All Bookings <span style={{ color: 'var(--text-muted)', fontSize: '0.72rem' }}>({rows.length} results)</span></h6></div>
+        <div className="tc-header">
+          <h6>All Bookings <span style={{ color: 'var(--text-muted)', fontSize: '0.72rem' }}>({rows.length}/{total} loaded)</span></h6>
+          <button className="btn-ag ghost sm" onClick={refresh}><i className="bi bi-arrow-clockwise" /> Refresh</button>
+        </div>
         <div className="table-responsive">
           <table className="ag-table">
             <thead><tr><th>ID</th><th>User</th><th>Vehicle</th><th>Slot</th><th>Booked</th><th>Check-In</th><th>Check-Out</th><th>Hours</th><th>Amount</th><th>Status</th></tr></thead>
             <tbody>
-              {rows.length === 0 ? (
+              {rows.length === 0 && loading ? (
+                <tr><td colSpan={10} style={{ textAlign: 'center', padding: '2rem', color: 'var(--text-muted)' }}>Loading bookings...</td></tr>
+              ) : rows.length === 0 ? (
                 <tr><td colSpan={10}><EmptyState icon="bi-inbox">No bookings found.</EmptyState></td></tr>
               ) : rows.map((b) => (
                 <tr key={b._id}>
@@ -109,6 +120,9 @@ export default function AdminBookings() {
             </tbody>
           </table>
         </div>
+        {rows.length > 0 && (
+          <InfiniteSentinel onVisible={loadMore} hasMore={hasMore} loading={loadingMore} />
+        )}
       </div>
     </Layout>
   );
