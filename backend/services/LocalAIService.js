@@ -45,10 +45,9 @@ function getWorker() {
 }
 
 let ocrQueue = Promise.resolve();
-function runOcr(buffer, psm) {
+function runOcr(buffer) {
   const job = ocrQueue.then(async () => {
     const worker = await getWorker();
-    if (psm) await worker.setParameters({ tessedit_pageseg_mode: psm });
     return worker.recognize(buffer);
   });
   ocrQueue = job.catch(() => {}); // keep the queue alive even if this job fails
@@ -225,41 +224,22 @@ function cleanToken(raw) {
   return raw.replace(/[^A-Z0-9]/g, '').toUpperCase();
 }
 
-// OCR frequently confuses visually-similar letter/digit pairs — especially
-// at the lower resolution a plate ends up at when it's a small part of a
-// wider shot (not a close-up). Rather than just rejecting those reads, try
-// swapping the ambiguous characters and re-testing against the plate shape.
-const LETTER_TO_DIGIT = { O: '0', Q: '0', D: '0', I: '1', L: '1', Z: '2', S: '5', B: '8', G: '6' };
-const DIGIT_TO_LETTER = { '0': 'O', '1': 'I', '2': 'Z', '5': 'S', '8': 'B', '6': 'G' };
-const swapLettersForDigits = (t) => t.replace(/[A-Z]/g, (c) => LETTER_TO_DIGIT[c] || c);
-const swapDigitsForLetters = (t) => t.replace(/[0-9]/g, (c) => DIGIT_TO_LETTER[c] || c);
-
 function extractPlate(rawText) {
   const text = (rawText || '').toUpperCase();
 
-  // Try the raw text first, then two "corrected" variants that assume the
-  // ambiguous characters were misread the other way — this recovers plates
-  // OCR almost got right instead of only accepting a perfect first read.
-  const variants = [text, swapLettersForDigits(text), swapDigitsForLetters(text)];
-
-  // 1) Prefer a strict Indian-plate-shaped match, checking each variant.
-  for (const v of variants) {
-    const strict = v.match(PLATE_REGEX);
-    if (strict) return cleanToken(strict[1]);
-  }
+  // 1) Prefer a strict Indian-plate-shaped match anywhere in the text.
+  const strict = text.match(PLATE_REGEX);
+  if (strict) return cleanToken(strict[1]);
 
   // 2) Fallback: the longest token that mixes letters and digits and is a
   //    plausible plate length — catches plates OCR read with odd spacing
-  //    or a non-Indian format. Checked across the same variants.
-  for (const v of variants) {
-    const tokens = v.split(/\s+/).map(cleanToken).filter(Boolean);
-    const candidate = tokens
-      .filter((t) => t.length >= 6 && t.length <= 11 && /[A-Z]/.test(t) && /[0-9]/.test(t))
-      .sort((a, b) => b.length - a.length)[0];
-    if (candidate) return candidate;
-  }
+  //    or a non-Indian format.
+  const tokens = text.split(/\s+/).map(cleanToken).filter(Boolean);
+  const candidate = tokens
+    .filter((t) => t.length >= 6 && t.length <= 11 && /[A-Z]/.test(t) && /[0-9]/.test(t))
+    .sort((a, b) => b.length - a.length)[0];
 
-  return null;
+  return candidate || null;
 }
 
 // Phone camera photos arrive at full resolution (often 3000-4000px wide,
@@ -268,45 +248,14 @@ function extractPlate(rawText) {
 // pixels that aren't the plate, and color/noise/background text confuses
 // recognition even when the plate itself is perfectly sharp. Downscaling to
 // a sane width and boosting contrast in grayscale fixes both at once.
-//
-// `width` controls how much detail survives the downscale — a close-up
-// photo where the plate fills the frame reads fine even at a smaller width,
-// but a normal photo where the plate is a small part of the frame needs
-// more pixels kept so individual plate characters don't blur together.
-// `strongContrast` applies a harder contrast stretch for a second pass,
-// which helps on photos with glare, shadow, or a dim plate.
-async function preprocessForOcr(buffer, { width = 1600, strongContrast = false } = {}) {
-  let pipeline = sharp(buffer)
+async function preprocessForOcr(buffer) {
+  return sharp(buffer)
     .rotate() // respect EXIF orientation instead of reading a sideways photo
-    .resize({ width, withoutEnlargement: true })
-    .grayscale();
-
-  pipeline = strongContrast
-    ? pipeline.linear(1.6, -40).sharpen({ sigma: 1.5 }) // harder contrast stretch for a tough second pass
-    : pipeline.normalize().sharpen(); // gentle contrast stretch for the fast first pass
-
-  return pipeline.toBuffer();
-}
-
-// Runs one OCR attempt (preprocess at a given size/contrast + a given page
-// segmentation mode) and returns the extracted plate plus Tesseract's own
-// confidence score, or null if nothing plate-shaped was found.
-async function attemptScan(buffer, { width, strongContrast, psm }) {
-  let processedBuffer;
-  try {
-    processedBuffer = await preprocessForOcr(buffer, { width, strongContrast });
-  } catch (err) {
-    // If preprocessing itself fails (e.g. corrupt/unsupported image data),
-    // fall back to the original buffer rather than failing the whole scan.
-    processedBuffer = buffer;
-  }
-
-  const ocrResult = await runOcr(processedBuffer, psm);
-  const rawText = ocrResult?.data?.text || '';
-  const meanConfidence = ocrResult?.data?.confidence ?? 0; // 0–100, Tesseract's own estimate
-  const plateNumber = extractPlate(rawText);
-
-  return { plateNumber, meanConfidence };
+    .resize({ width: 1000, withoutEnlargement: true })
+    .grayscale()
+    .normalize() // stretch contrast so plate text stands out from its background
+    .sharpen()
+    .toBuffer();
 }
 
 async function scanPlate(imageBase64) {
@@ -322,34 +271,29 @@ async function scanPlate(imageBase64) {
     return { plateNumber: null, confidence: 'low', vehicleCategoryGuess: null, note: "That image couldn't be read — please try taking the photo again." };
   }
 
-  // Multi-pass OCR: try a fast pass tuned for a close-up shot first, and
-  // only spend extra time on higher-resolution/harder-contrast passes if
-  // that didn't turn up a plate. This keeps close-up scans fast while still
-  // giving normal (non close-up) shots — where the plate is a smaller part
-  // of the frame — a real chance instead of failing after one attempt.
-  const attempts = [
-    { width: 1600, strongContrast: false, psm: Tesseract.PSM.SPARSE_TEXT },
-    { width: 2400, strongContrast: false, psm: Tesseract.PSM.SPARSE_TEXT },
-    { width: 2400, strongContrast: true, psm: Tesseract.PSM.SINGLE_BLOCK },
-  ];
-
-  let best = { plateNumber: null, meanConfidence: 0 };
+  let processedBuffer;
   try {
-    for (const attempt of attempts) {
-      const result = await attemptScan(buffer, attempt);
-      if (result.meanConfidence > best.meanConfidence) best = result;
-      if (result.plateNumber) {
-        best = result;
-        break; // good match found — no need to burn time on further passes
-      }
-    }
+    processedBuffer = await preprocessForOcr(buffer);
+  } catch (err) {
+    // If preprocessing itself fails (e.g. corrupt/unsupported image data),
+    // fall back to the original buffer rather than failing the whole scan.
+    processedBuffer = buffer;
+  }
+
+  let ocrResult;
+  try {
+    ocrResult = await runOcr(processedBuffer);
   } catch (err) {
     const e = new Error('The OCR engine failed to process that photo. Please try again.');
     e.statusCode = 502;
     throw e;
   }
 
-  if (!best.plateNumber) {
+  const rawText = ocrResult?.data?.text || '';
+  const meanConfidence = ocrResult?.data?.confidence ?? 0; // 0–100, Tesseract's own estimate
+  const plateNumber = extractPlate(rawText);
+
+  if (!plateNumber) {
     return {
       plateNumber: null,
       confidence: 'low',
@@ -358,10 +302,10 @@ async function scanPlate(imageBase64) {
     };
   }
 
-  const confidence = best.meanConfidence >= 70 ? 'high' : best.meanConfidence >= 40 ? 'medium' : 'low';
+  const confidence = meanConfidence >= 70 ? 'high' : meanConfidence >= 40 ? 'medium' : 'low';
 
   return {
-    plateNumber: best.plateNumber,
+    plateNumber,
     confidence,
     // Vehicle category (car/bike/etc.) can't be reliably inferred from a
     // plate crop alone, so this stays unset — the user picks it manually.
