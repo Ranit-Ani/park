@@ -4,8 +4,8 @@ const ai = require('../controllers/ai.controller');
 const { protect } = require('../middleware/auth.middleware');
 const rateLimit = require('express-rate-limit');
 
-// AI calls are slower/costlier than normal API calls — keep a tighter
-// per-user rate limit so one person can't hammer the Anthropic API.
+// Rate limit per user — the local model is cheap, but this also protects
+// against one user hammering it and starving everyone else.
 const aiLimiter = rateLimit({
   windowMs: 60 * 1000,
   max: 20,

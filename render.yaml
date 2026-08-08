@@ -4,8 +4,10 @@ services:
     env: node
     region: singapore
     plan: free
-    buildCommand: cd frontend && npm install && npm run build && cd ../backend && npm install
+    buildCommand: cd frontend && npm install && npm run build && cd ../backend && npm install && cd ../ai && pip install --break-system-packages -r requirements.txt && python3 dataset/build_dataset.py && python3 training/train.py
     startCommand: node backend/server.js
     envVars:
       - key: NODE_ENV
         value: production
+      - key: AI_API_URL
+        value: http://127.0.0.1:5001

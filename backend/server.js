@@ -12,6 +12,7 @@ require('dotenv').config();
 
 const { initSocket } = require('./socket');
 const BookingService = require('./services/BookingService');
+const { startAIProcess, stopAIProcess } = require('./utils/aiProcess');
 
 const authRoutes = require('./routes/auth.routes');
 const slotRoutes = require('./routes/slot.routes');
@@ -113,6 +114,15 @@ connectDB().then(() => {
   server.listen(PORT, () => {
     console.log(`🚀 Home Page : http://localhost:${PORT}/index.html`);
   });
+
+  // ─── Local AI model ───────────────────────────────────────────────────────
+  // Boots the self-hosted TF-IDF/Logistic Regression intent classifier
+  // (ai/api/app.py) as a child process, so one `npm start` runs everything —
+  // no external LLM API key required.
+  startAIProcess();
+
+  process.on('SIGTERM', stopAIProcess);
+  process.on('SIGINT', stopAIProcess);
 
   // ─── Booking Auto-Expiry (Rule 2) ────────────────────────────────────────
   // A "Booked" booking that isn't checked in within 1 hour is automatically
