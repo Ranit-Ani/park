@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import Sidebar from './Sidebar';
+import AIChatWidget from './AIChatWidget';
 import { useAuth } from '../context/AuthContext';
 
 /**
@@ -35,6 +36,7 @@ export default function Layout({ title, badge, badgeClass, right, children }) {
         </div>
         <div className="page-content">{children}</div>
       </div>
+      <AIChatWidget />
     </>
   );
 }

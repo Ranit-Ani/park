@@ -14,6 +14,7 @@ const FILTERS = [
   { key: 'Active', label: 'Active', cls: 'cyan' },
   { key: 'Completed', label: 'Completed', cls: 'green' },
   { key: 'Cancelled', label: 'Cancelled', cls: 'ghost' },
+  { key: 'Expired', label: 'Expired', cls: 'ghost' },
 ];
 
 export default function UserBookings() {

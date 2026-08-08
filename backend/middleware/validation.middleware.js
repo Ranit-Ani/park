@@ -49,11 +49,6 @@ const slotValidator = [
 // ─── Booking Validators ────────────────────────────────────────────────────────
 const bookingValidator = [
   body('slotId').notEmpty().withMessage('Slot ID is required').isMongoId().withMessage('Invalid slot ID'),
-  body('scheduledDate')
-    .notEmpty()
-    .withMessage('Scheduled date is required')
-    .isISO8601()
-    .withMessage('Invalid date format'),
   validate,
 ];
 

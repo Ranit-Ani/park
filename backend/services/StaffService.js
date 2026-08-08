@@ -125,7 +125,7 @@ class StaffService {
       const start = new Date(filters.date);
       const end = new Date(filters.date);
       end.setHours(23, 59, 59, 999);
-      query.scheduledDate = { $gte: start, $lte: end };
+      query.bookingTime = { $gte: start, $lte: end };
     }
 
     return Booking.find(query)

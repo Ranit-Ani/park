@@ -5,6 +5,7 @@ import Modal from '../../components/Modal';
 import { ActionButton, EmptyState } from '../../components/Bits';
 import { apiRequest } from '../../lib/api';
 import { formatDateTime } from '../../lib/utils';
+import { getSocket } from '../../lib/socket';
 
 function dur(ci) {
   const ms = Date.now() - new Date(ci);
@@ -32,8 +33,20 @@ export default function CheckOut() {
 
   useEffect(() => {
     load();
+
+    // Live sync: a session appears here the instant it's checked in (by
+    // this or any other staff member) and disappears the instant it's
+    // checked out — no manual refresh needed.
+    const socket = getSocket();
+    socket.on('bookingUpdated', load);
+
+    // Safety-net poll in case a socket event is ever missed.
     const t = setInterval(load, 30000);
-    return () => clearInterval(t);
+
+    return () => {
+      clearInterval(t);
+      socket.off('bookingUpdated', load);
+    };
   }, [load]);
 
   const rows = useMemo(() => {

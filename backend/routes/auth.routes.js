@@ -18,4 +18,10 @@ router.post('/email-change/initiate',      protect, auth.initiateEmailChange);
 router.post('/email-change/verify',        protect, auth.verifyEmailChange);
 router.delete('/account',                  protect, auth.deleteAccount);
 
+// Saved vehicles (Rule 3)
+router.get('/vehicles',                    protect, auth.getVehicles);
+router.post('/vehicles',                   protect, auth.addVehicle);
+router.put('/vehicles/:vehicleId',         protect, auth.updateVehicle);
+router.delete('/vehicles/:vehicleId',      protect, auth.deleteVehicle);
+
 module.exports = router;

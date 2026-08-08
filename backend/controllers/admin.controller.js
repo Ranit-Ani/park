@@ -25,6 +25,16 @@ class AdminController {
     }
   }
 
+  // GET /api/admin/analytics/occupancy
+  async getOccupancyInsights(req, res, next) {
+    try {
+      const insights = await AdminService.getOccupancyInsights();
+      res.json({ success: true, data: insights });
+    } catch (err) {
+      next(err);
+    }
+  }
+
   // ─── User Management ──────────────────────────────────────────────────────────
   // GET /api/admin/users
   async getAllUsers(req, res, next) {

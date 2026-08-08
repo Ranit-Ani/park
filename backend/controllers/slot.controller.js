@@ -1,4 +1,5 @@
 const ParkingSlot = require('../models/ParkingSlot');
+const Booking = require('../models/Booking');
 
 /**
  * SlotController - Handles parking slot operations for users
@@ -64,6 +65,24 @@ class SlotController {
     try {
       const stats = await ParkingSlot.getSlotStats();
       res.json({ success: true, data: stats });
+    } catch (err) {
+      next(err);
+    }
+  }
+
+  // GET /api/slots/insights - Peak/quiet hours for users deciding when to book.
+  // Deliberately a trimmed-down subset of the admin analytics (no revenue data).
+  async getInsights(req, res, next) {
+    try {
+      const full = await Booking.getOccupancyInsights();
+      res.json({
+        success: true,
+        data: {
+          peakHours: full.peakHours,
+          quietHours: full.quietHours,
+          busiestDays: full.busiestDays.slice(0, 2),
+        },
+      });
     } catch (err) {
       next(err);
     }

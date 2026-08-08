@@ -4,7 +4,8 @@ import Alert from '../../components/Alert';
 import Modal from '../../components/Modal';
 import { ActionButton, EmptyState } from '../../components/Bits';
 import { apiRequest } from '../../lib/api';
-import { formatDate, formatDateTime } from '../../lib/utils';
+import { formatDateTime } from '../../lib/utils';
+import { getSocket } from '../../lib/socket';
 
 export default function CheckIn() {
   const [all, setAll] = useState([]);
@@ -20,8 +21,27 @@ export default function CheckIn() {
 
   useEffect(() => {
     load();
+
+    // Live sync: a new booking appears here the instant a user books, and
+    // one already on this screen disappears the instant it's checked in
+    // (by another staff member), cancelled, or auto-expired — no manual
+    // refresh needed.
+    const socket = getSocket();
+    socket.on('bookingCreated', load);
+    socket.on('bookingUpdated', load);
+    socket.on('bookingCancelled', load);
+    socket.on('bookingExpired', load);
+
+    // Safety-net poll in case a socket event is ever missed.
     const t = setInterval(load, 30000);
-    return () => clearInterval(t);
+
+    return () => {
+      clearInterval(t);
+      socket.off('bookingCreated', load);
+      socket.off('bookingUpdated', load);
+      socket.off('bookingCancelled', load);
+      socket.off('bookingExpired', load);
+    };
   }, [load]);
 
   const rows = useMemo(() => {
@@ -50,7 +70,7 @@ export default function CheckIn() {
         <div className="tc-header"><h6>Booked — Awaiting Check-In</h6><button className="btn-ag ghost sm" onClick={load}><i className="bi bi-arrow-clockwise" /> Refresh</button></div>
         <div className="table-responsive">
           <table className="ag-table">
-            <thead><tr><th>Booking ID</th><th>User</th><th>Vehicle</th><th>Slot</th><th>Location</th><th>Scheduled</th><th>Booked At</th><th>Action</th></tr></thead>
+            <thead><tr><th>Booking ID</th><th>User</th><th>Vehicle</th><th>Slot</th><th>Location</th><th>Booked At</th><th>Expires</th><th>Action</th></tr></thead>
             <tbody>
               {rows.length === 0 ? (
                 <tr><td colSpan={8}><EmptyState icon="bi-check-all">No pending check-ins.</EmptyState></td></tr>
@@ -66,8 +86,8 @@ export default function CheckIn() {
                   </td>
                   <td><span className="ag-badge available">{b.slotId?.slotNumber || '—'}</span></td>
                   <td>{b.slotId?.location || '—'}</td>
-                  <td>{formatDate(b.scheduledDate)}</td>
                   <td>{formatDateTime(b.bookingTime)}</td>
+                  <td>{b.expiresAt ? formatDateTime(b.expiresAt) : '—'}</td>
                   <td><button className="btn-ag green sm" onClick={() => setSel(b)}><i className="bi bi-box-arrow-in-right" /> Check In</button></td>
                 </tr>
               ))}

@@ -2,6 +2,36 @@ const mongoose = require('mongoose');
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 
+// A user can save multiple vehicles to their account and pick between them
+// when creating a booking, instead of typing the details in every time.
+const VehicleSchema = new mongoose.Schema(
+  {
+    category: {
+      type: String,
+      enum: ['2 Wheeler', '3 Wheeler', '4 Wheeler'],
+      required: [true, 'Vehicle category is required'],
+    },
+    vehicleNumber: {
+      type: String,
+      trim: true,
+      uppercase: true,
+      maxlength: 20,
+      default: null,
+    },
+    registrationPending: {
+      type: Boolean,
+      default: false,
+    },
+    nickname: {
+      type: String,
+      trim: true,
+      maxlength: 40,
+      default: null,
+    },
+  },
+  { timestamps: true }
+);
+
 const UserSchema = new mongoose.Schema(
   {
     name: {
@@ -31,6 +61,9 @@ const UserSchema = new mongoose.Schema(
     isActive: { type: Boolean, default: true },
     isEmailVerified: { type: Boolean, default: false },
     profilePhoto: { type: String, default: null },
+
+    // Saved vehicles for this account (Rule 3: users can save multiple vehicles).
+    vehicles: { type: [VehicleSchema], default: [] },
 
     // OTP — stored as plain fields, no nested enum validation that could fail silently
     otpCode:      { type: String,  default: null },

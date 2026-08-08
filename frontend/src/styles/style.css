@@ -213,6 +213,7 @@ h1,h2,h3,h4,h5,h6{font-family:'Exo 2',sans-serif;letter-spacing:.02em;color:var(
   font-family:'DM Sans',sans-serif;font-weight:600;font-size:.84rem;cursor:pointer;
   transition:all .22s ease;display:inline-flex;align-items:center;gap:.4rem;
   text-decoration:none;position:relative;overflow:hidden;letter-spacing:.02em;
+  white-space:nowrap;
 }
 .btn-ag::before{content:'';position:absolute;inset:0;background:linear-gradient(135deg,rgba(255,255,255,.12),transparent);opacity:0;transition:.2s}
 .btn-ag:hover::before{opacity:1}
@@ -280,6 +281,7 @@ h1,h2,h3,h4,h5,h6{font-family:'Exo 2',sans-serif;letter-spacing:.02em;color:var(
 .ag-badge.occupied{background:rgba(255,60,120,.1);color:var(--nova);border:1px solid rgba(255,60,120,.2)}
 .ag-badge.completed{background:rgba(0,117,255,.1);color:var(--pulse);border:1px solid rgba(0,117,255,.2)}
 .ag-badge.cancelled{background:rgba(42,74,106,.2);color:var(--t2);border:1px solid var(--t4)}
+.ag-badge.expired{background:rgba(255,110,60,.1);color:#ff8a5c;border:1px solid rgba(255,110,60,.2)}
 .ag-badge.admin{background:rgba(255,60,120,.1);color:var(--nova);border:1px solid rgba(255,60,120,.2)}
 .ag-badge.staff{background:rgba(255,184,0,.1);color:var(--solar);border:1px solid rgba(255,184,0,.2)}
 .ag-badge.user{background:rgba(0,117,255,.1);color:var(--pulse);border:1px solid rgba(0,117,255,.2)}
@@ -392,7 +394,8 @@ h1,h2,h3,h4,h5,h6{font-family:'Exo 2',sans-serif;letter-spacing:.02em;color:var(
   background:rgba(1,2,6,.82);backdrop-filter:blur(24px);border-bottom:1px solid var(--t4);
 }
 .pub-nav-brand{display:flex;align-items:center;gap:.55rem;text-decoration:none;font-family:'Exo 2',sans-serif;font-size:.82rem;font-weight:700;color:var(--t1);letter-spacing:.1em}
-.pub-nav-brand .nav-logo{width:32px;height:32px;background:linear-gradient(135deg,var(--plasma),var(--pulse));border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:.9rem;color:var(--void);box-shadow:0 0 15px rgba(0,240,255,.35)}
+.pub-nav-brand .nav-logo{width:32px;height:32px;background:linear-gradient(135deg,var(--plasma),var(--pulse));border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:.9rem;color:var(--void);box-shadow:0 0 15px rgba(0,240,255,.35);flex-shrink:0}
+.pub-nav-actions{display:flex;gap:.6rem;align-items:center;flex-shrink:0}
 .hero-section{min-height:100vh;display:flex;align-items:center;justify-content:center;text-align:center;padding:6rem 1rem 4rem;position:relative;z-index:1}
 .hero-badge{display:inline-flex;align-items:center;gap:.5rem;background:rgba(0,240,255,.06);border:1px solid rgba(0,240,255,.18);border-radius:20px;padding:.38rem 1rem;font-family:'Syne',sans-serif;font-size:.7rem;color:var(--plasma);letter-spacing:.12em;text-transform:uppercase;margin-bottom:1.8rem;animation:fadeUp .6s ease forwards}
 .hero-badge .dot{width:6px;height:6px;background:var(--plasma);border-radius:50%;animation:pulseDot 2s ease infinite}
@@ -472,6 +475,21 @@ h1,h2,h3,h4,h5,h6{font-family:'Exo 2',sans-serif;letter-spacing:.02em;color:var(
   }
   .profile-grid{grid-template-columns:1fr}
   .dash-two-col{grid-template-columns:1fr}
+
+  /* Public header (Landing page) — keep brand + auth buttons on one row,
+     never wrapping or clipping, by shrinking each element proportionally. */
+  .pub-nav{padding:.7rem .9rem;gap:.5rem}
+  .pub-nav-brand{font-size:.62rem;gap:.4rem;letter-spacing:.06em}
+  .pub-nav-brand .nav-logo{width:28px;height:28px;font-size:.78rem}
+  .pub-nav-brand-text{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:150px;display:inline-block}
+  .pub-nav-actions{gap:.4rem}
+  .pub-nav-actions .btn-ag{padding:.4rem .7rem;font-size:.72rem}
+}
+@media(max-width:400px){
+  .pub-nav{padding:.6rem .7rem}
+  .pub-nav-brand-text{max-width:98px;font-size:.6rem}
+  .pub-nav-brand .nav-logo{width:26px;height:26px;font-size:.72rem}
+  .pub-nav-actions .btn-ag{padding:.36rem .55rem;font-size:.68rem;gap:.25rem}
 }
 
 /* ── Public Footer ────────────────────────────────────────────── */

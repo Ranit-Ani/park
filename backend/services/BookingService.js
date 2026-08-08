@@ -1,8 +1,12 @@
 const Booking = require('../models/Booking');
 const ParkingSlot = require('../models/ParkingSlot');
+const User = require('../models/User');
 const Revenue = require('../models/Revenue');
 const BillingService = require('./BillingService');
 const { getIO } = require('../socket');
+
+const ALLOWED_CATEGORIES = ['2 Wheeler', '3 Wheeler', '4 Wheeler'];
+const BOOKED_TTL_MS = 60 * 60 * 1000; // Rule 2: 1 hour to check in before auto-expiry
 
 /**
  * BookingService - Handles all booking business logic
@@ -10,36 +14,86 @@ const { getIO } = require('../socket');
  */
 class BookingService {
   /**
-   * Create a new booking with all validations
+   * Create a new booking with all validations.
+   *
+   * Advance booking has been removed entirely — every booking is for
+   * "right now". The booking is created in "Booked" status and must be
+   * checked in within 1 hour (see expireStaleBookings), or it will be
+   * auto-expired and the slot released.
+   *
+   * The vehicle can come from one of the user's saved vehicles
+   * (pass `vehicleId`) or be entered as a one-off (pass `vehicleCategory`
+   * / `vehicleNumber` / `registrationPending` directly).
+   *
    * @param {string} userId
    * @param {string} slotId
-   * @param {Date} scheduledDate
-   * @param {string} vehicleCategory - '2 Wheeler' | '3 Wheeler' | '4 Wheeler'
-   * @param {string|null} vehicleNumber - required unless registrationPending
-   * @param {boolean} registrationPending - true for a brand-new, not-yet-registered vehicle
+   * @param {object} vehicleInput
+   * @param {string} [vehicleInput.vehicleId] - id of a saved vehicle in User.vehicles
+   * @param {string} [vehicleInput.vehicleCategory] - '2 Wheeler' | '3 Wheeler' | '4 Wheeler'
+   * @param {string|null} [vehicleInput.vehicleNumber] - required unless registrationPending
+   * @param {boolean} [vehicleInput.registrationPending] - true for a brand-new, not-yet-registered vehicle
+   * @param {boolean} [vehicleInput.saveVehicle] - if true and no vehicleId given, save this vehicle to the user's account
    * @returns {Promise<Booking>}
    */
-  async createBooking(userId, slotId, scheduledDate, vehicleCategory, vehicleNumber, registrationPending) {
-    // Business Rule: One active booking per user
-    const hasActive = await Booking.hasActiveBooking(userId);
-    if (hasActive) {
-      const err = new Error('You already have an active booking. Please complete or cancel it first.');
+  async createBooking(userId, slotId, vehicleInput = {}) {
+    const { vehicleId, saveVehicle } = vehicleInput;
+    let { vehicleCategory, vehicleNumber, registrationPending } = vehicleInput;
+
+    // Business Rule: A user can have only ONE booking in "Booked" status
+    // (awaiting check-in) at a time. Once that booking becomes "Active"
+    // (checked in), they're free to create another — for a new or
+    // different saved vehicle.
+    const hasBooked = await Booking.hasBookedBooking(userId);
+    if (hasBooked) {
+      const err = new Error('You already have a booking awaiting check-in. Please check in or cancel it first.');
       err.statusCode = 400;
       throw err;
     }
 
-    const ALLOWED_CATEGORIES = ['2 Wheeler', '3 Wheeler', '4 Wheeler'];
-    if (!vehicleCategory || !ALLOWED_CATEGORIES.includes(vehicleCategory)) {
-      const err = new Error('Select a valid vehicle category (2 Wheeler, 3 Wheeler, or 4 Wheeler).');
-      err.statusCode = 400;
-      throw err;
-    }
+    let resolvedVehicleId = null;
 
-    const isPending = !!registrationPending;
-    if (!isPending && (!vehicleNumber || !vehicleNumber.trim())) {
-      const err = new Error('Vehicle registration number is required, or check "Registration Pending".');
-      err.statusCode = 400;
-      throw err;
+    if (vehicleId) {
+      // Booking with a saved vehicle — pull its details from the user's account.
+      const user = await User.findById(userId);
+      if (!user) {
+        const err = new Error('User not found.');
+        err.statusCode = 404;
+        throw err;
+      }
+      const vehicle = user.vehicles.id(vehicleId);
+      if (!vehicle) {
+        const err = new Error('Saved vehicle not found.');
+        err.statusCode = 404;
+        throw err;
+      }
+      vehicleCategory = vehicle.category;
+      vehicleNumber = vehicle.vehicleNumber;
+      registrationPending = vehicle.registrationPending;
+      resolvedVehicleId = vehicle._id;
+    } else {
+      if (!vehicleCategory || !ALLOWED_CATEGORIES.includes(vehicleCategory)) {
+        const err = new Error('Select a valid vehicle category (2 Wheeler, 3 Wheeler, or 4 Wheeler).');
+        err.statusCode = 400;
+        throw err;
+      }
+
+      const isPending = !!registrationPending;
+      if (!isPending && (!vehicleNumber || !vehicleNumber.trim())) {
+        const err = new Error('Vehicle registration number is required, or check "Registration Pending".');
+        err.statusCode = 400;
+        throw err;
+      }
+      registrationPending = isPending;
+      vehicleNumber = isPending ? null : vehicleNumber.trim().toUpperCase();
+
+      if (saveVehicle) {
+        const user = await User.findById(userId);
+        if (user) {
+          user.vehicles.push({ category: vehicleCategory, vehicleNumber, registrationPending });
+          await user.save();
+          resolvedVehicleId = user.vehicles[user.vehicles.length - 1]._id;
+        }
+      }
     }
 
     // Business Rule: Slot must be available
@@ -61,13 +115,16 @@ class BookingService {
     await slot.save();
 
     try {
+      const now = new Date();
       const booking = await Booking.create({
         userId,
         slotId,
-        scheduledDate: new Date(scheduledDate),
+        bookingTime: now,
+        expiresAt: new Date(now.getTime() + BOOKED_TTL_MS),
+        vehicleId: resolvedVehicleId,
         vehicleCategory,
-        vehicleNumber: isPending ? null : vehicleNumber.trim().toUpperCase(),
-        registrationPending: isPending,
+        vehicleNumber,
+        registrationPending,
         status: 'Booked',
       });
 
@@ -117,7 +174,7 @@ class BookingService {
       throw err;
     }
 
-    if (booking.status === 'Completed' || booking.status === 'Cancelled') {
+    if (booking.status === 'Completed' || booking.status === 'Cancelled' || booking.status === 'Expired') {
       const err = new Error(`Booking is already ${booking.status}.`);
       err.statusCode = 400;
       throw err;
@@ -135,6 +192,35 @@ class BookingService {
     getIO().to('admin').to('staff').emit('bookingCancelled', { bookingId: booking._id });
 
     return booking;
+  }
+
+  /**
+   * Auto-expire stale "Booked" bookings whose 1-hour check-in window has
+   * passed (Rule 2). For each: mark the booking "Expired", cancel it, and
+   * release the parking slot back to "Available". Intended to be run on a
+   * recurring schedule (see server.js).
+   * @returns {Promise<number>} number of bookings expired
+   */
+  async expireStaleBookings() {
+    const now = new Date();
+    const stale = await Booking.find({
+      status: 'Booked',
+      expiresAt: { $ne: null, $lte: now },
+    });
+
+    for (const booking of stale) {
+      booking.status = 'Expired';
+      booking.cancelledAt = now;
+      await booking.save();
+
+      await ParkingSlot.findByIdAndUpdate(booking.slotId, { status: 'Available' });
+
+      getIO().emit('slotUpdated', { slotId: booking.slotId, status: 'Available' });
+      getIO().emit('bookingUpdated', { bookingId: booking._id, status: 'Expired' });
+      getIO().to('admin').to('staff').emit('bookingExpired', { bookingId: booking._id });
+    }
+
+    return stale.length;
   }
 
   /**

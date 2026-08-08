@@ -162,6 +162,7 @@ exports.getMe = async (req, res, next) => {
         isEmailVerified: user.isEmailVerified,
         profilePhoto:    user.profilePhoto,
         createdAt:       user.createdAt,
+        vehicles:        user.vehicles,
       },
     });
   } catch (err) { next(err); }
@@ -322,5 +323,85 @@ exports.deleteAccount = async (req, res, next) => {
       return next(new AppError('Incorrect password', 401));
     await User.findByIdAndDelete(req.user.id);
     res.json({ success: true, message: 'Account permanently deleted.' });
+  } catch (err) { next(err); }
+};
+
+// ─── Vehicles (Rule 3: users can save multiple vehicles) ─────────────────────
+const ALLOWED_VEHICLE_CATEGORIES = ['2 Wheeler', '3 Wheeler', '4 Wheeler'];
+
+// GET /api/auth/vehicles
+exports.getVehicles = async (req, res, next) => {
+  try {
+    const user = await User.findById(req.user.id);
+    if (!user) return next(new AppError('User not found', 404));
+    res.json({ success: true, data: user.vehicles });
+  } catch (err) { next(err); }
+};
+
+// POST /api/auth/vehicles
+exports.addVehicle = async (req, res, next) => {
+  try {
+    const { category, vehicleNumber, registrationPending, nickname } = req.body;
+    if (!category || !ALLOWED_VEHICLE_CATEGORIES.includes(category))
+      return next(new AppError('Select a valid vehicle category (2 Wheeler, 3 Wheeler, or 4 Wheeler).', 400));
+
+    const isPending = !!registrationPending;
+    if (!isPending && (!vehicleNumber || !vehicleNumber.trim()))
+      return next(new AppError('Vehicle registration number is required, or mark as Registration Pending.', 400));
+
+    const user = await User.findById(req.user.id);
+    if (!user) return next(new AppError('User not found', 404));
+
+    user.vehicles.push({
+      category,
+      vehicleNumber: isPending ? null : vehicleNumber.trim().toUpperCase(),
+      registrationPending: isPending,
+      nickname: nickname ? nickname.trim() : null,
+    });
+    await user.save();
+
+    res.status(201).json({ success: true, message: 'Vehicle saved.', data: user.vehicles[user.vehicles.length - 1] });
+  } catch (err) { next(err); }
+};
+
+// PUT /api/auth/vehicles/:vehicleId
+exports.updateVehicle = async (req, res, next) => {
+  try {
+    const { category, vehicleNumber, registrationPending, nickname } = req.body;
+    const user = await User.findById(req.user.id);
+    if (!user) return next(new AppError('User not found', 404));
+
+    const vehicle = user.vehicles.id(req.params.vehicleId);
+    if (!vehicle) return next(new AppError('Vehicle not found', 404));
+
+    if (category !== undefined) {
+      if (!ALLOWED_VEHICLE_CATEGORIES.includes(category))
+        return next(new AppError('Select a valid vehicle category (2 Wheeler, 3 Wheeler, or 4 Wheeler).', 400));
+      vehicle.category = category;
+    }
+    if (registrationPending !== undefined) vehicle.registrationPending = !!registrationPending;
+    if (vehicleNumber !== undefined) vehicle.vehicleNumber = vehicle.registrationPending ? null : (vehicleNumber ? vehicleNumber.trim().toUpperCase() : null);
+    if (nickname !== undefined) vehicle.nickname = nickname ? nickname.trim() : null;
+
+    if (!vehicle.registrationPending && !vehicle.vehicleNumber)
+      return next(new AppError('Vehicle registration number is required, or mark as Registration Pending.', 400));
+
+    await user.save();
+    res.json({ success: true, message: 'Vehicle updated.', data: vehicle });
+  } catch (err) { next(err); }
+};
+
+// DELETE /api/auth/vehicles/:vehicleId
+exports.deleteVehicle = async (req, res, next) => {
+  try {
+    const user = await User.findById(req.user.id);
+    if (!user) return next(new AppError('User not found', 404));
+
+    const vehicle = user.vehicles.id(req.params.vehicleId);
+    if (!vehicle) return next(new AppError('Vehicle not found', 404));
+
+    vehicle.deleteOne();
+    await user.save();
+    res.json({ success: true, message: 'Vehicle removed.' });
   } catch (err) { next(err); }
 };

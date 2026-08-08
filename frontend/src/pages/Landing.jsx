@@ -1,12 +1,24 @@
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import ThreeBackground from '../components/ThreeBackground';
 import { apiRequest, getToken, getUser } from '../lib/api';
 import { homeForRole } from '../lib/utils';
+import { getSocket } from '../lib/socket';
 
 export default function Landing() {
   const navigate = useNavigate();
   const [stats, setStats] = useState({ total: '--', avail: '--', occ: '--' });
+
+  const loadStats = useCallback(async () => {
+    const d = await apiRequest('/slots/stats');
+    if (d && d.success) {
+      setStats({
+        total: d.data.total,
+        avail: d.data.Available || 0,
+        occ: (d.data.Booked || 0) + (d.data.Occupied || 0),
+      });
+    }
+  }, []);
 
   useEffect(() => {
     const t = getToken(), u = getUser();
@@ -14,17 +26,23 @@ export default function Landing() {
       navigate(homeForRole(u.role), { replace: true });
       return;
     }
-    (async () => {
-      const d = await apiRequest('/slots/stats');
-      if (d && d.success) {
-        setStats({
-          total: d.data.total,
-          avail: d.data.Available || 0,
-          occ: (d.data.Booked || 0) + (d.data.Occupied || 0),
-        });
-      }
-    })();
-  }, [navigate]);
+    loadStats();
+
+    // Live sync: every slot booking, check-in/out, or admin change to the
+    // slot inventory updates these numbers immediately — no refresh needed.
+    const socket = getSocket();
+    socket.on('slotUpdated', loadStats);
+    socket.on('slotDeleted', loadStats);
+
+    // Safety-net poll in case a socket event is ever missed.
+    const poll = setInterval(loadStats, 60000);
+
+    return () => {
+      clearInterval(poll);
+      socket.off('slotUpdated', loadStats);
+      socket.off('slotDeleted', loadStats);
+    };
+  }, [navigate, loadStats]);
 
   return (
     <>
@@ -33,9 +51,9 @@ export default function Landing() {
       <nav className="pub-nav">
         <Link className="pub-nav-brand" to="/">
           <div className="nav-logo"><i className="bi bi-p-square-fill" /></div>
-          SMART CAMPUS CAR-PARKING
+          <span className="pub-nav-brand-text">SMART CAMPUS CAR-PARKING</span>
         </Link>
-        <div style={{ display: 'flex', gap: '.6rem', alignItems: 'center' }}>
+        <div className="pub-nav-actions">
           <Link to="/login" className="btn-ag ghost sm">Sign In</Link>
           <Link to="/register" className="btn-ag primary sm"><i className="bi bi-person-plus" /> Register</Link>
         </div>

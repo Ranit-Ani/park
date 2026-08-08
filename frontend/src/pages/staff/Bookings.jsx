@@ -7,7 +7,7 @@ import { apiRequest } from '../../lib/api';
 import { formatDate, formatDateTime } from '../../lib/utils';
 import { getSocket } from '../../lib/socket';
 
-const COLORS = { Booked: 'booked', Active: 'active', Completed: 'completed', Cancelled: 'cancelled' };
+const COLORS = { Booked: 'booked', Active: 'active', Completed: 'completed', Cancelled: 'cancelled', Expired: 'expired' };
 
 export default function StaffBookings() {
   const [all, setAll] = useState([]);
@@ -38,7 +38,7 @@ export default function StaffBookings() {
   }, [load]);
 
   const counts = useMemo(() => {
-    const c = { Booked: 0, Active: 0, Completed: 0, Cancelled: 0 };
+    const c = { Booked: 0, Active: 0, Completed: 0, Cancelled: 0, Expired: 0 };
     all.forEach((b) => { if (c[b.status] !== undefined) c[b.status]++; });
     return c;
   }, [all]);
@@ -64,6 +64,7 @@ export default function StaffBookings() {
               <option value="Active">Active</option>
               <option value="Completed">Completed</option>
               <option value="Cancelled">Cancelled</option>
+              <option value="Expired">Expired</option>
             </select>
           </div>
           <div><label className="ag-label">Date</label><input className="ag-input" type="date" value={fDate} onChange={(e) => setFDate(e.target.value)} /></div>

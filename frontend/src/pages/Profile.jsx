@@ -36,6 +36,89 @@ export default function Profile() {
   const [deleteBusy, setDeleteBusy] = useState(false);
   const [deleteAlert, setDeleteAlert] = useState({ message: '', type: 'info' });
 
+  // ─── Saved Vehicles (Rule 3) ───────────────────────────────────────────────
+  const [vehicles, setVehicles] = useState([]);
+  const [vehicleModal, setVehicleModal] = useState(false);
+  const [vCategory, setVCategory] = useState('');
+  const [vNumber, setVNumber] = useState('');
+  const [vPending, setVPending] = useState(false);
+  const [vNickname, setVNickname] = useState('');
+  const [vBusy, setVBusy] = useState(false);
+  const [vScanBusy, setVScanBusy] = useState(false);
+  const [vAlert, setVAlert] = useState({ message: '', type: 'info' });
+
+  const isUserRole = user?.role === 'user';
+
+  const loadVehicles = async () => {
+    const d = await apiRequest('/auth/vehicles');
+    if (d && d.success) setVehicles(d.data);
+  };
+
+  useEffect(() => { if (isUserRole) loadVehicles(); }, [isUserRole]);
+
+  function openAddVehicle() {
+    setVCategory(''); setVNumber(''); setVPending(false); setVNickname('');
+    setVAlert({ message: '', type: 'info' });
+    setVehicleModal(true);
+  }
+
+  function fileToBase64(file) {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = () => resolve(reader.result.split(',')[1]);
+      reader.onerror = reject;
+      reader.readAsDataURL(file);
+    });
+  }
+
+  async function scanVehiclePlate(e) {
+    const file = e.target.files?.[0];
+    e.target.value = ''; // allow re-selecting the same file next time
+    if (!file) return;
+
+    setVScanBusy(true);
+    setVAlert({ message: '', type: 'info' });
+    try {
+      const imageBase64 = await fileToBase64(file);
+      const d = await apiRequest('/ai/scan-plate', { method: 'POST', body: { imageBase64, mediaType: file.type || 'image/jpeg' } });
+      if (d && d.success && d.data.plateNumber) {
+        setVNumber(d.data.plateNumber);
+        setVPending(false);
+        if (d.data.vehicleCategoryGuess && !vCategory) setVCategory(d.data.vehicleCategoryGuess);
+        if (d.data.confidence === 'low') setVAlert({ message: 'Plate scanned, but I\'m not fully confident — please double-check it.', type: 'warning' });
+      } else {
+        setVAlert({ message: (d && d.message) || "Couldn't read a plate in that photo. Try a clearer shot or type it in.", type: 'warning' });
+      }
+    } finally {
+      setVScanBusy(false);
+    }
+  }
+
+  async function saveNewVehicle() {
+    if (!vCategory) return setVAlert({ message: 'Select a vehicle category.', type: 'warning' });
+    if (!vPending && !vNumber.trim()) return setVAlert({ message: 'Enter a registration number, or mark as Registration Pending.', type: 'warning' });
+    setVBusy(true);
+    const d = await apiRequest('/auth/vehicles', {
+      method: 'POST',
+      body: { category: vCategory, vehicleNumber: vPending ? null : vNumber.trim(), registrationPending: vPending, nickname: vNickname.trim() || undefined },
+    });
+    setVBusy(false);
+    if (d && d.success) {
+      setVehicleModal(false);
+      loadVehicles();
+      setAlert({ message: 'Vehicle saved.', type: 'success' });
+    } else {
+      setVAlert({ message: (d && d.message) || 'Failed to save vehicle.', type: 'danger' });
+    }
+  }
+
+  async function removeVehicle(id) {
+    if (!confirm('Remove this vehicle from your account?')) return;
+    const d = await apiRequest('/auth/vehicles/' + id, { method: 'DELETE' });
+    if (d && d.success) { loadVehicles(); setAlert({ message: 'Vehicle removed.', type: 'success' }); }
+    else setAlert({ message: (d && d.message) || 'Failed to remove vehicle.', type: 'danger' });
+  }
+
   useEffect(() => {
     (async () => {
       const d = await apiRequest('/auth/me');
@@ -211,6 +294,32 @@ export default function Profile() {
             </form>
           </div>
 
+          {isUserRole && (
+            <div className="ag-card ag-card-body">
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.2rem' }}>
+                <div style={{ fontFamily: "'Syne',sans-serif", fontSize: '.65rem', color: 'var(--t2)', letterSpacing: '.15em', textTransform: 'uppercase' }}>My Vehicles</div>
+                <button type="button" className="btn-ag plasma sm" onClick={openAddVehicle}><i className="bi bi-plus-lg" /> Add Vehicle</button>
+              </div>
+              {vehicles.length === 0 ? (
+                <p style={{ fontSize: '.82rem', color: 'var(--t2)' }}>No saved vehicles yet. Add one so you can pick it instantly when booking a slot.</p>
+              ) : (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '.6rem' }}>
+                  {vehicles.map((v) => (
+                    <div key={v._id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '.6rem .8rem', border: '1px solid var(--t4)', borderRadius: '10px' }}>
+                      <div>
+                        <div style={{ fontWeight: 700, fontFamily: 'monospace' }}>
+                          {v.registrationPending ? <span className="ag-badge unverified">Pending</span> : v.vehicleNumber}
+                        </div>
+                        <small style={{ color: 'var(--t2)' }}>{v.nickname ? v.nickname + ' · ' : ''}{v.category}</small>
+                      </div>
+                      <button className="btn-ag red sm" onClick={() => removeVehicle(v._id)}><i className="bi bi-trash3" /></button>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          )}
+
           <div className="ag-card ag-card-body" style={{ borderColor: 'rgba(255,60,120,.15)' }}>
             <div style={{ fontFamily: "'Syne',sans-serif", fontSize: '.65rem', color: 'var(--nova)', letterSpacing: '.15em', textTransform: 'uppercase', marginBottom: '1rem' }}>Danger Zone</div>
             <p style={{ fontSize: '.82rem', color: 'var(--t2)', marginBottom: '1rem', lineHeight: 1.6 }}>
@@ -274,6 +383,61 @@ export default function Profile() {
           <div className="ag-input-icon"><i className="bi bi-lock" /><input className="ag-input" type="password" placeholder="Your password" value={deletePwd} onChange={(e) => setDeletePwd(e.target.value)} /></div>
         </div>
       </Modal>
+
+      {isUserRole && (
+        <Modal
+          show={vehicleModal}
+          onClose={() => setVehicleModal(false)}
+          title="Add Vehicle"
+          icon="bi-car-front"
+          size="sm"
+          footer={(
+            <>
+              <button className="btn-ag ghost" onClick={() => setVehicleModal(false)}>Cancel</button>
+              <ActionButton busy={vBusy} busyLabel="Saving..." className="btn-ag green" onClick={saveNewVehicle}>
+                <i className="bi bi-check-circle" /> Save Vehicle
+              </ActionButton>
+            </>
+          )}
+        >
+          <Alert message={vAlert.message} type={vAlert.type} />
+          <div className="ag-input-group">
+            <label className="ag-label">Category</label>
+            <select className="ag-select" value={vCategory} onChange={(e) => setVCategory(e.target.value)}>
+              <option value="">Select category...</option>
+              <option value="2 Wheeler">2 Wheeler</option>
+              <option value="3 Wheeler">3 Wheeler</option>
+              <option value="4 Wheeler">4 Wheeler</option>
+            </select>
+          </div>
+          <div className="ag-input-group">
+            <label className="ag-label">Registration Number</label>
+            <div style={{ display: 'flex', gap: '.5rem', alignItems: 'stretch' }}>
+              <input
+                className="ag-input"
+                type="text"
+                placeholder="e.g. WB 02 AB 1234"
+                value={vPending ? '' : vNumber}
+                onChange={(e) => setVNumber(e.target.value.toUpperCase())}
+                disabled={vPending}
+                style={{ flex: 1, ...(vPending ? { opacity: 0.5, cursor: 'not-allowed' } : {}) }}
+              />
+              <label className="btn-ag plasma sm" style={{ flexShrink: 0, cursor: vPending || vScanBusy ? 'not-allowed' : 'pointer', opacity: vPending || vScanBusy ? 0.5 : 1 }}>
+                {vScanBusy ? <span className="spinner-border-sm" /> : <i className="bi bi-camera" />}
+                <input type="file" accept="image/*" capture="environment" onChange={scanVehiclePlate} disabled={vPending || vScanBusy} style={{ display: 'none' }} />
+              </label>
+            </div>
+            <label className="ag-check-row">
+              <input type="checkbox" checked={vPending} onChange={(e) => setVPending(e.target.checked)} />
+              <span>Registration Pending (New Vehicle)</span>
+            </label>
+          </div>
+          <div className="ag-input-group">
+            <label className="ag-label">Nickname (optional)</label>
+            <input className="ag-input" type="text" placeholder="e.g. My Scooter" value={vNickname} onChange={(e) => setVNickname(e.target.value)} />
+          </div>
+        </Modal>
+      )}
     </Layout>
   );
 }

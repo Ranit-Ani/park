@@ -7,15 +7,18 @@ const rateLimit = require('express-rate-limit');
 const xssClean = require('xss-clean');
 const path = require('path');
 const http = require('http');
+const cron = require('node-cron');
 require('dotenv').config();
 
 const { initSocket } = require('./socket');
+const BookingService = require('./services/BookingService');
 
 const authRoutes = require('./routes/auth.routes');
 const slotRoutes = require('./routes/slot.routes');
 const bookingRoutes = require('./routes/booking.routes');
 const staffRoutes = require('./routes/staff.routes');
 const adminRoutes = require('./routes/admin.routes');
+const aiRoutes = require('./routes/ai.routes');
 const errorHandler = require('./middleware/error.middleware');
 
 const app = express();
@@ -75,6 +78,7 @@ app.use('/api/slots', slotRoutes);
 app.use('/api/bookings', bookingRoutes);
 app.use('/api/staff', staffRoutes);
 app.use('/api/admin', adminRoutes);
+app.use('/api/ai', aiRoutes);
 
 // ─── Frontend Routes (SPA fallback) ──────────────────────────────────────────
 app.get('*', (req, res) => {
@@ -108,6 +112,18 @@ const PORT = process.env.PORT || 6000;
 connectDB().then(() => {
   server.listen(PORT, () => {
     console.log(`🚀 Home Page : http://localhost:${PORT}/index.html`);
+  });
+
+  // ─── Booking Auto-Expiry (Rule 2) ────────────────────────────────────────
+  // A "Booked" booking that isn't checked in within 1 hour is automatically
+  // marked "Expired", cancelled, and its slot released. Runs every minute.
+  cron.schedule('* * * * *', async () => {
+    try {
+      const count = await BookingService.expireStaleBookings();
+      if (count > 0) console.log(`⏱️  Auto-expired ${count} stale booking(s).`);
+    } catch (err) {
+      console.error('❌ Booking expiry job failed:', err.message);
+    }
   });
 });
 

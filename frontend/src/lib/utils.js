@@ -17,6 +17,7 @@ const STATUS_CLASS_MAP = {
   Active: 'active',
   Completed: 'completed',
   Cancelled: 'cancelled',
+  Expired: 'expired',
   Maintenance: 'maintenance',
 };
 
