@@ -45,7 +45,6 @@ export default function Profile() {
   const [vNickname, setVNickname] = useState('');
   const [vBusy, setVBusy] = useState(false);
   const [vAlert, setVAlert] = useState({ message: '', type: 'info' });
-  const [vScanBusy, setVScanBusy] = useState(false);
 
   const isUserRole = user?.role === 'user';
 
@@ -60,39 +59,6 @@ export default function Profile() {
     setVCategory(''); setVNumber(''); setVPending(false); setVNickname('');
     setVAlert({ message: '', type: 'info' });
     setVehicleModal(true);
-  }
-
-  function fileToBase64(file) {
-    return new Promise((resolve, reject) => {
-      const reader = new FileReader();
-      reader.onload = () => resolve(reader.result.split(',')[1]);
-      reader.onerror = reject;
-      reader.readAsDataURL(file);
-    });
-  }
-
-  // ─── AI: scan a photo of a number plate to auto-fill the registration ──────
-  async function scanVehiclePlate(e) {
-    const file = e.target.files?.[0];
-    e.target.value = ''; // allow re-selecting the same file next time
-    if (!file) return;
-
-    setVScanBusy(true);
-    setVAlert({ message: '', type: 'info' });
-    try {
-      const imageBase64 = await fileToBase64(file);
-      const d = await apiRequest('/ai/scan-plate', { method: 'POST', body: { imageBase64, mediaType: file.type || 'image/jpeg' } });
-      if (d && d.success && d.data.plateNumber) {
-        setVNumber(d.data.plateNumber);
-        setVPending(false);
-        if (d.data.vehicleCategoryGuess && !vCategory) setVCategory(d.data.vehicleCategoryGuess);
-        if (d.data.confidence === 'low') setVAlert({ message: 'Plate scanned, but I\'m not fully confident — please double-check it.', type: 'warning' });
-      } else {
-        setVAlert({ message: (d && d.data && d.data.note) || (d && d.message) || "Couldn't read a plate in that photo. Try a clearer shot or type it in.", type: 'warning' });
-      }
-    } finally {
-      setVScanBusy(false);
-    }
   }
 
   async function saveNewVehicle() {
@@ -416,21 +382,15 @@ export default function Profile() {
           </div>
           <div className="ag-input-group">
             <label className="ag-label">Registration Number</label>
-            <div style={{ display: 'flex', gap: '.5rem', alignItems: 'stretch' }}>
-              <input
-                className="ag-input"
-                type="text"
-                placeholder="e.g. WB 02 AB 1234"
-                value={vPending ? '' : vNumber}
-                onChange={(e) => setVNumber(e.target.value.toUpperCase())}
-                disabled={vPending}
-                style={{ flex: 1, ...(vPending ? { opacity: 0.5, cursor: 'not-allowed' } : {}) }}
-              />
-              <label className="btn-ag plasma sm" style={{ flexShrink: 0, cursor: vPending || vScanBusy ? 'not-allowed' : 'pointer', opacity: vPending || vScanBusy ? 0.5 : 1 }}>
-                {vScanBusy ? <span className="spinner-border-sm" /> : <i className="bi bi-camera" />}
-                <input type="file" accept="image/*" capture="environment" onChange={scanVehiclePlate} disabled={vPending || vScanBusy} style={{ display: 'none' }} />
-              </label>
-            </div>
+            <input
+              className="ag-input"
+              type="text"
+              placeholder="e.g. WB 02 AB 1234"
+              value={vPending ? '' : vNumber}
+              onChange={(e) => setVNumber(e.target.value.toUpperCase())}
+              disabled={vPending}
+              style={vPending ? { opacity: 0.5, cursor: 'not-allowed' } : undefined}
+            />
             <label className="ag-check-row">
               <input type="checkbox" checked={vPending} onChange={(e) => setVPending(e.target.checked)} />
               <span>Registration Pending (New Vehicle)</span>

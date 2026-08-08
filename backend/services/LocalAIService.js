@@ -1,58 +1,11 @@
 const path = require('path');
 const fs = require('fs');
-const Tesseract = require('tesseract.js');
-const sharp = require('sharp');
 const { runTool } = require('./aiTools');
 
 // The ai/ directory sits at the project root, alongside backend/ and frontend/.
 const AI_ROOT = path.resolve(__dirname, '..', '..', 'ai');
 const INTENTS_CONFIG_PATH = path.join(AI_ROOT, 'config', 'intents.json');
 const AI_API_URL = process.env.AI_API_URL || 'http://127.0.0.1:5001';
-
-// Indian vehicle registration plate shape, e.g. "MH12AB1234" or "MH 12 AB 1234".
-// Matches after the OCR text has been uppercased; spacing/dashes are optional.
-const PLATE_REGEX = /\b([A-Z]{2}\s?-?\s?[0-9]{1,2}\s?-?\s?[A-Z]{1,2}\s?-?\s?[0-9]{4})\b/;
-
-// ─── Shared OCR worker ──────────────────────────────────────────────────
-// Tesseract.recognize() on its own creates and tears down a worker (and
-// re-fetches the English language data) on every call. Keep one worker
-// alive instead, and queue jobs so concurrent scans don't collide on it.
-let workerPromise = null;
-function getWorker() {
-  if (!workerPromise) {
-    // langPath defaults to tesseract.js's own jsDelivr CDN. Some hosts/
-    // networks block that CDN — set OCR_LANG_PATH to an alternate mirror
-    // (e.g. a raw.githubusercontent.com/naptha/tessdata path) if so.
-    const workerOptions = { logger: () => {} };
-    if (process.env.OCR_LANG_PATH) workerOptions.langPath = process.env.OCR_LANG_PATH;
-    workerPromise = Tesseract.createWorker('eng', 1, workerOptions)
-      .then(async (worker) => {
-        // Tune the engine for short, single-line, plate-style text instead
-        // of its "full page of text" default — this is what actually lets
-        // it lock onto a plate surrounded by car/road background.
-        await worker.setParameters({
-          tessedit_pageseg_mode: Tesseract.PSM.SPARSE_TEXT,
-          tessedit_char_whitelist: 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789 -',
-        });
-        return worker;
-      })
-      .catch((err) => {
-        workerPromise = null; // allow the next call to retry creating it
-        throw err;
-      });
-  }
-  return workerPromise;
-}
-
-let ocrQueue = Promise.resolve();
-function runOcr(buffer) {
-  const job = ocrQueue.then(async () => {
-    const worker = await getWorker();
-    return worker.recognize(buffer);
-  });
-  ocrQueue = job.catch(() => {}); // keep the queue alive even if this job fails
-  return job;
-}
 
 let intentsConfig = null;
 function loadIntentsConfig() {
@@ -215,103 +168,4 @@ async function chat({ user, message }) {
   };
 }
 
-// ─── Public: scanPlate ───────────────────────────────────────────────────
-// Runs real OCR (Tesseract.js — self-hosted, no external API key) on the
-// uploaded photo, then extracts a plate-shaped token from the recognized
-// text. This is separate from the text intent classifier above; OCR needs
-// image input, not a category label.
-function cleanToken(raw) {
-  return raw.replace(/[^A-Z0-9]/g, '').toUpperCase();
-}
-
-function extractPlate(rawText) {
-  const text = (rawText || '').toUpperCase();
-
-  // 1) Prefer a strict Indian-plate-shaped match anywhere in the text.
-  const strict = text.match(PLATE_REGEX);
-  if (strict) return cleanToken(strict[1]);
-
-  // 2) Fallback: the longest token that mixes letters and digits and is a
-  //    plausible plate length — catches plates OCR read with odd spacing
-  //    or a non-Indian format.
-  const tokens = text.split(/\s+/).map(cleanToken).filter(Boolean);
-  const candidate = tokens
-    .filter((t) => t.length >= 6 && t.length <= 11 && /[A-Z]/.test(t) && /[0-9]/.test(t))
-    .sort((a, b) => b.length - a.length)[0];
-
-  return candidate || null;
-}
-
-// Phone camera photos arrive at full resolution (often 3000-4000px wide,
-// several MB) and in color. Feeding that straight into Tesseract is what
-// made scans slow AND inaccurate: the engine spends most of its time on
-// pixels that aren't the plate, and color/noise/background text confuses
-// recognition even when the plate itself is perfectly sharp. Downscaling to
-// a sane width and boosting contrast in grayscale fixes both at once.
-async function preprocessForOcr(buffer) {
-  return sharp(buffer)
-    .rotate() // respect EXIF orientation instead of reading a sideways photo
-    .resize({ width: 1000, withoutEnlargement: true })
-    .grayscale()
-    .normalize() // stretch contrast so plate text stands out from its background
-    .sharpen()
-    .toBuffer();
-}
-
-async function scanPlate(imageBase64) {
-  if (!imageBase64) {
-    return { plateNumber: null, confidence: 'low', vehicleCategoryGuess: null, note: 'No image received.' };
-  }
-
-  let buffer;
-  try {
-    buffer = Buffer.from(imageBase64, 'base64');
-    if (!buffer.length) throw new Error('empty buffer');
-  } catch (err) {
-    return { plateNumber: null, confidence: 'low', vehicleCategoryGuess: null, note: "That image couldn't be read — please try taking the photo again." };
-  }
-
-  let processedBuffer;
-  try {
-    processedBuffer = await preprocessForOcr(buffer);
-  } catch (err) {
-    // If preprocessing itself fails (e.g. corrupt/unsupported image data),
-    // fall back to the original buffer rather than failing the whole scan.
-    processedBuffer = buffer;
-  }
-
-  let ocrResult;
-  try {
-    ocrResult = await runOcr(processedBuffer);
-  } catch (err) {
-    const e = new Error('The OCR engine failed to process that photo. Please try again.');
-    e.statusCode = 502;
-    throw e;
-  }
-
-  const rawText = ocrResult?.data?.text || '';
-  const meanConfidence = ocrResult?.data?.confidence ?? 0; // 0–100, Tesseract's own estimate
-  const plateNumber = extractPlate(rawText);
-
-  if (!plateNumber) {
-    return {
-      plateNumber: null,
-      confidence: 'low',
-      vehicleCategoryGuess: null,
-      note: "Couldn't find a number plate in that photo. Fill the frame with just the plate, use good lighting, and hold the camera straight-on.",
-    };
-  }
-
-  const confidence = meanConfidence >= 70 ? 'high' : meanConfidence >= 40 ? 'medium' : 'low';
-
-  return {
-    plateNumber,
-    confidence,
-    // Vehicle category (car/bike/etc.) can't be reliably inferred from a
-    // plate crop alone, so this stays unset — the user picks it manually.
-    vehicleCategoryGuess: null,
-    note: null,
-  };
-}
-
-module.exports = { chat, scanPlate };
+module.exports = { chat };

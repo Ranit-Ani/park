@@ -16,17 +16,3 @@ exports.chat = async (req, res, next) => {
     next(err);
   }
 };
-
-// POST /api/ai/scan-plate
-exports.scanPlate = async (req, res, next) => {
-  try {
-    const { imageBase64 } = req.body;
-    if (!imageBase64) {
-      return res.status(400).json({ success: false, message: 'imageBase64 is required.' });
-    }
-    const result = await LocalAIService.scanPlate(imageBase64);
-    res.json({ success: true, data: result });
-  } catch (err) {
-    next(err);
-  }
-};
