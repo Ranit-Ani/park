@@ -76,6 +76,7 @@ const ADMIN_TOOLS = [
 
 function toolsForRole(role) {
   if (role === 'admin') return [...BASE_TOOLS, ...USER_TOOLS, ...ADMIN_TOOLS];
+  if (role === 'staff') return BASE_TOOLS; // staff have no personal bookings/vehicles to look up
   return [...BASE_TOOLS, ...USER_TOOLS];
 }
 
@@ -91,7 +92,22 @@ async function runTool(name, args, ctx) {
         acc[s.status] = (acc[s.status] || 0) + 1;
         return acc;
       }, {});
-      return { total: slots.length, byStatus: summary, availableSlots: slots.filter((s) => s.status === 'Available').slice(0, 15) };
+      // Group hourly rates by slot type so rate questions ("what's the rate
+      // for standard/EV/faculty slots?") can be answered directly without
+      // dumping every single slot into the model's context.
+      const ratesByType = {};
+      for (const s of slots) {
+        if (!ratesByType[s.slotType]) ratesByType[s.slotType] = { min: s.hourlyRate, max: s.hourlyRate };
+        ratesByType[s.slotType].min = Math.min(ratesByType[s.slotType].min, s.hourlyRate);
+        ratesByType[s.slotType].max = Math.max(ratesByType[s.slotType].max, s.hourlyRate);
+      }
+      return {
+        total: slots.length,
+        byStatus: summary,
+        ratesByType,
+        billingNote: 'Minimum 1 hour billed, rounded up to the next hour, at the slot\'s hourly rate.',
+        availableSlots: slots.filter((s) => s.status === 'Available').slice(0, 15),
+      };
     }
     case 'get_occupancy_insights':
       return Booking.getOccupancyInsights();
@@ -121,17 +137,87 @@ async function runTool(name, args, ctx) {
   }
 }
 
+// ─── Platform knowledge base ────────────────────────────────────────────────
+// Procedural/policy questions ("how do I...", "can I...", "what happens
+// if...") can't be answered by a data tool — they need to be baked into the
+// prompt directly. Organized by topic so it's easy to extend later.
+
+const COMMON_KNOWLEDGE = `
+BOOKING
+- Booking is always for right now — there is no advance/scheduled booking. You pick an available slot and book it immediately.
+- To book, pick an available slot, then either choose one of your saved vehicles or enter a new vehicle's category and registration number.
+- A new booking starts in "Booked" status and stays that way for 1 hour. If you don't check in within that hour, it auto-expires: the booking becomes "Expired" and the slot is released back to Available.
+- You can only have ONE booking in "Booked" status at a time (i.e. one unclaimed reservation awaiting check-in). If you try to book again while you already have one, it will be rejected — check in or cancel the existing one first.
+- Once a booking becomes "Active" (you've checked in), you're free to create a new booking right away — for the same or a different vehicle.
+
+CANCELLATION
+- You can cancel a booking any time while it is still "Booked" (i.e. before check-in) — from "My Bookings", tap Cancel. Staff/admin can also cancel it for you.
+- Once a booking is "Active" (checked in), it can NOT be cancelled — the only way to end it is to check out normally at the slot.
+- Bookings that are already "Completed", "Cancelled", or "Expired" can't be cancelled again (nothing to cancel).
+- There's no separate cancellation fee — since payment only happens at checkout, cancelling before check-in means nothing was ever charged.
+
+CHECK-IN
+- Check-in is done by staff at the check-in console, using your booking ID or vehicle details — you don't do it yourself in the app.
+- Check-in moves the booking from "Booked" to "Active" and the slot from "Booked" to "Occupied".
+- If your 1-hour window passes before staff can check you in, the booking auto-expires and you'll need to book again.
+
+CHECK-OUT & BILLING
+- Check-out is done by staff at the check-out console when you're leaving.
+- Billing is minimum 1 hour, rounded UP to the next hour, at the slot's hourly rate (rates vary by slot type — standard/faculty/disabled/ev). E.g. 1 hour 5 minutes of parking bills as 2 hours.
+- Check-out moves the booking to "Completed", generates a bill/receipt, and frees the slot back to "Available".
+- A downloadable receipt is available for completed bookings.
+
+VEHICLES
+- You can save multiple vehicles to your account (Profile → My Vehicles) and pick one instantly when booking, instead of retyping details each time.
+- Supported vehicle categories: 2 Wheeler, 3 Wheeler, 4 Wheeler. Buses, trucks, and other heavy vehicles are not supported.
+- If a vehicle is brand new and doesn't have a registration number yet, check "Registration Pending" instead of typing a number.
+- A registration/plate photo can be scanned (camera button next to the registration field) to auto-fill the number instead of typing it.
+- Saved vehicles can be edited or removed any time from Profile → My Vehicles.
+
+ACCOUNT
+- Profile (name, photo) can be updated from the Profile page.
+- Password can be changed from Profile → Security.
+- Email can be changed from Profile, which requires OTP verification of the new email before it takes effect.
+- Accounts can be permanently deleted from Profile → Danger Zone, which requires re-entering your password to confirm. This is irreversible.
+- New accounts register with an email OTP verification step.
+
+SLOTS
+- Slot types: standard, faculty, disabled, ev (EV charging). Slot statuses: Available, Booked, Occupied, Maintenance.
+- Always use the slot-availability tool to answer questions about current counts, specific locations, or rates — never guess numbers.
+- Peak/quiet hours and busiest slots come from the occupancy-insights tool, based on real historical booking data.`;
+
+const ROLE_KNOWLEDGE = {
+  user: `
+YOUR ROLE (User)
+- You can view live slot availability, book a slot for right now, check your own booking history, and manage your saved vehicles — all via tools when asked.
+- You cannot check yourself in or out — that's done by staff — and you cannot see other users' data, revenue, or admin functions.`,
+
+  staff: `
+YOUR ROLE (Staff)
+- You work the check-in and check-out consoles. Check-in: find the user's pending "Booked" booking, verify the vehicle, confirm check-in — this moves it to "Active" and the slot to "Occupied".
+- Check-out: find the "Active" booking, confirm check-out — this calculates the bill (min 1 hour, rounded up), moves the booking to "Completed", and frees the slot.
+- You do not have access to revenue reports or user-account management — those are admin-only.
+- You don't have a personal "my bookings" history the way a regular user does — you manage everyone else's, not your own parking.`,
+
+  admin: `
+YOUR ROLE (Admin)
+- You manage the slot inventory (add/edit/deactivate slots, set slot type, location, and hourly rate) and user accounts (change a user's role between user/staff/admin — this automatically moves them between the Users and Staff sections; activate/deactivate accounts).
+- You have access to revenue reports (total revenue, completed-booking counts, average bill) and full occupancy/demand insights — use the relevant tools rather than guessing figures.
+- You can see a summary of user counts by role and active status via a tool.`,
+};
+
 function systemPromptFor(user) {
-  return `You are the AI assistant embedded in the Smart Campus Car-Parking System, talking to a logged-in ${user.role} named ${user.name}.
+  const roleBlock = ROLE_KNOWLEDGE[user.role] || ROLE_KNOWLEDGE.user;
+  return `You are the AI assistant embedded in the Smart Campus Car-Parking System, talking to a logged-in ${user.role} named ${user.name}. Answer questions about how the platform works, current data, and this user's own account.
+${COMMON_KNOWLEDGE}
+${roleBlock}
 
-Rules the platform enforces that you should know:
-- Bookings are always for right now — there is no advance/scheduled booking.
-- A new booking stays "Booked" for 1 hour; if the user doesn't check in within that hour it auto-expires and the slot is released.
-- A user can only have one "Booked" booking at a time, but once it becomes "Active" (checked in) they can book again for another vehicle.
-- Billing is minimum 1 hour, rounded up, charged at the slot's hourly rate.
-- Slot statuses: Available, Booked, Occupied, Maintenance. Booking statuses: Booked, Active, Completed, Cancelled, Expired.
+CAPABILITIES AND BOUNDARIES
+- You have LIVE, READ-ONLY tools for real slot data, rates, occupancy patterns, and (depending on role) this user's own bookings/vehicles or admin revenue/user data. ALWAYS call the relevant tool before answering a question about current rates, availability, bookings, revenue, or usage patterns — never say information "isn't available" or "isn't supported" if a tool or the knowledge above could answer it. Only say you don't know after actually checking.
+- You CANNOT perform actions yourself (you cannot create, cancel, or modify a booking, slot, or account, and you cannot check anyone in or out). When someone asks you to *do* something, don't just refuse — explain the relevant rule and tell them exactly where in the app to do it themselves.
+- If asked something entirely outside this parking system's scope, say so plainly and briefly instead of trying to answer it.
 
-Use the available tools to fetch real, current data before answering questions about slots, bookings, revenue, or usage patterns — never guess numbers. Keep answers short and to the point (this is a small chat widget, not a report). If asked to do something outside this app's scope, say so plainly.`;
+Keep answers short and to the point (this is a small chat widget, not a report).`;
 }
 
 // Frontend sends history as [{ role: 'user'|'assistant', content: string }].
