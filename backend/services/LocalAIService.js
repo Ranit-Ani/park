@@ -1,6 +1,7 @@
 const path = require('path');
 const fs = require('fs');
 const Tesseract = require('tesseract.js');
+const sharp = require('sharp');
 const { runTool } = require('./aiTools');
 
 // The ai/ directory sits at the project root, alongside backend/ and frontend/.
@@ -24,10 +25,21 @@ function getWorker() {
     // (e.g. a raw.githubusercontent.com/naptha/tessdata path) if so.
     const workerOptions = { logger: () => {} };
     if (process.env.OCR_LANG_PATH) workerOptions.langPath = process.env.OCR_LANG_PATH;
-    workerPromise = Tesseract.createWorker('eng', 1, workerOptions).catch((err) => {
-      workerPromise = null; // allow the next call to retry creating it
-      throw err;
-    });
+    workerPromise = Tesseract.createWorker('eng', 1, workerOptions)
+      .then(async (worker) => {
+        // Tune the engine for short, single-line, plate-style text instead
+        // of its "full page of text" default — this is what actually lets
+        // it lock onto a plate surrounded by car/road background.
+        await worker.setParameters({
+          tessedit_pageseg_mode: Tesseract.PSM.SPARSE_TEXT,
+          tessedit_char_whitelist: 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789 -',
+        });
+        return worker;
+      })
+      .catch((err) => {
+        workerPromise = null; // allow the next call to retry creating it
+        throw err;
+      });
   }
   return workerPromise;
 }
@@ -230,6 +242,22 @@ function extractPlate(rawText) {
   return candidate || null;
 }
 
+// Phone camera photos arrive at full resolution (often 3000-4000px wide,
+// several MB) and in color. Feeding that straight into Tesseract is what
+// made scans slow AND inaccurate: the engine spends most of its time on
+// pixels that aren't the plate, and color/noise/background text confuses
+// recognition even when the plate itself is perfectly sharp. Downscaling to
+// a sane width and boosting contrast in grayscale fixes both at once.
+async function preprocessForOcr(buffer) {
+  return sharp(buffer)
+    .rotate() // respect EXIF orientation instead of reading a sideways photo
+    .resize({ width: 1000, withoutEnlargement: true })
+    .grayscale()
+    .normalize() // stretch contrast so plate text stands out from its background
+    .sharpen()
+    .toBuffer();
+}
+
 async function scanPlate(imageBase64) {
   if (!imageBase64) {
     return { plateNumber: null, confidence: 'low', vehicleCategoryGuess: null, note: 'No image received.' };
@@ -243,9 +271,18 @@ async function scanPlate(imageBase64) {
     return { plateNumber: null, confidence: 'low', vehicleCategoryGuess: null, note: "That image couldn't be read — please try taking the photo again." };
   }
 
+  let processedBuffer;
+  try {
+    processedBuffer = await preprocessForOcr(buffer);
+  } catch (err) {
+    // If preprocessing itself fails (e.g. corrupt/unsupported image data),
+    // fall back to the original buffer rather than failing the whole scan.
+    processedBuffer = buffer;
+  }
+
   let ocrResult;
   try {
-    ocrResult = await runOcr(buffer);
+    ocrResult = await runOcr(processedBuffer);
   } catch (err) {
     const e = new Error('The OCR engine failed to process that photo. Please try again.');
     e.statusCode = 502;
