@@ -4,30 +4,30 @@
 
 export const API_BASE = '/api';
 
-// sessionStorage (not localStorage) is used deliberately here: it is scoped
-// to a single browser tab. Opening the site in a brand new tab always starts
-// with an empty session, so the user has to log in again there — even
-// though they're already logged in on another tab of the same browser.
+// localStorage is used here (not sessionStorage) so the session survives
+// closing the tab/browser and reopening it, and is shared across tabs.
+// The JWT itself still expires normally on the backend, so this only
+// keeps the user logged in for as long as the token is valid.
 export function getToken() {
-  return sessionStorage.getItem('agp_token');
+  return localStorage.getItem('agp_token');
 }
 
 export function getUser() {
   try {
-    return JSON.parse(sessionStorage.getItem('agp_user') || 'null');
+    return JSON.parse(localStorage.getItem('agp_user') || 'null');
   } catch {
     return null;
   }
 }
 
 export function setSession(token, user) {
-  sessionStorage.setItem('agp_token', token);
-  sessionStorage.setItem('agp_user', JSON.stringify(user));
+  localStorage.setItem('agp_token', token);
+  localStorage.setItem('agp_user', JSON.stringify(user));
 }
 
 export function clearSession() {
-  sessionStorage.removeItem('agp_token');
-  sessionStorage.removeItem('agp_user');
+  localStorage.removeItem('agp_token');
+  localStorage.removeItem('agp_user');
 }
 
 /**

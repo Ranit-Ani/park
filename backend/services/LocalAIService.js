@@ -168,4 +168,17 @@ async function chat({ user, message }) {
   };
 }
 
-module.exports = { chat };
+// ─── Public: scanPlate ───────────────────────────────────────────────────
+// The custom model here is a text intent classifier, not a vision model, so
+// it cannot read a plate from an image. Rather than failing the request,
+// tell the frontend clearly so it can fall back to manual entry.
+async function scanPlate() {
+  return {
+    plateNumber: null,
+    confidence: 'low',
+    vehicleCategoryGuess: null,
+    note: "Automatic plate scanning isn't available with the self-hosted model — please type the registration number.",
+  };
+}
+
+module.exports = { chat, scanPlate };

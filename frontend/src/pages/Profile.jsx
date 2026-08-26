@@ -45,6 +45,7 @@ export default function Profile() {
   const [vNickname, setVNickname] = useState('');
   const [vBusy, setVBusy] = useState(false);
   const [vAlert, setVAlert] = useState({ message: '', type: 'info' });
+  const [vScanBusy, setVScanBusy] = useState(false);
 
   const isUserRole = user?.role === 'user';
 
@@ -59,6 +60,39 @@ export default function Profile() {
     setVCategory(''); setVNumber(''); setVPending(false); setVNickname('');
     setVAlert({ message: '', type: 'info' });
     setVehicleModal(true);
+  }
+
+  function fileToBase64(file) {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = () => resolve(reader.result.split(',')[1]);
+      reader.onerror = reject;
+      reader.readAsDataURL(file);
+    });
+  }
+
+  // ─── AI: scan a photo of a number plate to auto-fill the registration ──────
+  async function scanVehiclePlate(e) {
+    const file = e.target.files?.[0];
+    e.target.value = ''; // allow re-selecting the same file next time
+    if (!file) return;
+
+    setVScanBusy(true);
+    setVAlert({ message: '', type: 'info' });
+    try {
+      const imageBase64 = await fileToBase64(file);
+      const d = await apiRequest('/ai/scan-plate', { method: 'POST', body: { imageBase64, mediaType: file.type || 'image/jpeg' } });
+      if (d && d.success && d.data.plateNumber) {
+        setVNumber(d.data.plateNumber);
+        setVPending(false);
+        if (d.data.vehicleCategoryGuess && !vCategory) setVCategory(d.data.vehicleCategoryGuess);
+        if (d.data.confidence === 'low') setVAlert({ message: 'Plate scanned, but I\'m not fully confident — please double-check it.', type: 'warning' });
+      } else {
+        setVAlert({ message: (d && d.message) || "Couldn't read a plate in that photo. Try a clearer shot or type it in.", type: 'warning' });
+      }
+    } finally {
+      setVScanBusy(false);
+    }
   }
 
   async function saveNewVehicle() {
@@ -196,7 +230,7 @@ export default function Profile() {
       <div className="profile-grid">
 
         <div className="ag-card ag-card-body">
-          <div style={{ fontFamily: "'Inter',sans-serif", fontSize: '.65rem', color: 'var(--t2)', letterSpacing: '.15em', textTransform: 'uppercase', marginBottom: '1.4rem' }}>Identity</div>
+          <div style={{ fontFamily: "'Syne',sans-serif", fontSize: '.65rem', color: 'var(--t2)', letterSpacing: '.15em', textTransform: 'uppercase', marginBottom: '1.4rem' }}>Identity</div>
 
           <div style={{ textAlign: 'center', marginBottom: '1.5rem' }}>
             <div className="profile-avatar-wrap" onClick={() => fileRef.current?.click()}>
@@ -208,7 +242,7 @@ export default function Profile() {
               <div className="profile-avatar-overlay"><i className="bi bi-camera-fill" style={{ fontSize: '1.1rem' }} /><span>Change</span></div>
             </div>
             <input ref={fileRef} type="file" accept="image/*" style={{ display: 'none' }} onChange={handlePhoto} />
-            <div style={{ fontSize: '.72rem', color: 'var(--t2)', fontFamily: "'Inter',sans-serif", letterSpacing: '.08em' }}>CLICK TO CHANGE PHOTO</div>
+            <div style={{ fontSize: '.72rem', color: 'var(--t2)', fontFamily: "'Syne',sans-serif", letterSpacing: '.08em' }}>CLICK TO CHANGE PHOTO</div>
           </div>
 
           <form onSubmit={saveProfile}>
@@ -241,7 +275,7 @@ export default function Profile() {
 
         <div style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
           <div className="ag-card ag-card-body">
-            <div style={{ fontFamily: "'Inter',sans-serif", fontSize: '.65rem', color: 'var(--t2)', letterSpacing: '.15em', textTransform: 'uppercase', marginBottom: '1.2rem' }}>Security</div>
+            <div style={{ fontFamily: "'Syne',sans-serif", fontSize: '.65rem', color: 'var(--t2)', letterSpacing: '.15em', textTransform: 'uppercase', marginBottom: '1.2rem' }}>Security</div>
             <form onSubmit={savePassword}>
               <div className="ag-input-group">
                 <label className="ag-label">Current Password</label>
@@ -264,7 +298,7 @@ export default function Profile() {
           {isUserRole && (
             <div className="ag-card ag-card-body">
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.2rem' }}>
-                <div style={{ fontFamily: "'Inter',sans-serif", fontSize: '.65rem', color: 'var(--t2)', letterSpacing: '.15em', textTransform: 'uppercase' }}>My Vehicles</div>
+                <div style={{ fontFamily: "'Syne',sans-serif", fontSize: '.65rem', color: 'var(--t2)', letterSpacing: '.15em', textTransform: 'uppercase' }}>My Vehicles</div>
                 <button type="button" className="btn-ag plasma sm" onClick={openAddVehicle}><i className="bi bi-plus-lg" /> Add Vehicle</button>
               </div>
               {vehicles.length === 0 ? (
@@ -290,8 +324,8 @@ export default function Profile() {
             </div>
           )}
 
-          <div className="ag-card ag-card-body" style={{ borderColor: 'rgba(176,72,63,.15)' }}>
-            <div style={{ fontFamily: "'Inter',sans-serif", fontSize: '.65rem', color: 'var(--nova)', letterSpacing: '.15em', textTransform: 'uppercase', marginBottom: '1rem' }}>Danger Zone</div>
+          <div className="ag-card ag-card-body" style={{ borderColor: 'rgba(255,60,120,.15)' }}>
+            <div style={{ fontFamily: "'Syne',sans-serif", fontSize: '.65rem', color: 'var(--nova)', letterSpacing: '.15em', textTransform: 'uppercase', marginBottom: '1rem' }}>Danger Zone</div>
             <p style={{ fontSize: '.82rem', color: 'var(--t2)', marginBottom: '1rem', lineHeight: 1.6 }}>
               Permanently delete your account and all associated data. This action cannot be undone.
             </p>
@@ -336,7 +370,7 @@ export default function Profile() {
         title="Delete Account"
         icon="bi-exclamation-triangle"
         size="sm"
-        headerStyle={{ background: 'linear-gradient(135deg,rgba(176,72,63,.12),rgba(122,46,40,.08))' }}
+        headerStyle={{ background: 'linear-gradient(135deg,rgba(255,60,120,.12),rgba(200,0,50,.08))' }}
         footer={(
           <>
             <button className="btn-ag ghost" onClick={() => setDeleteModal(false)}>Cancel</button>
@@ -382,15 +416,21 @@ export default function Profile() {
           </div>
           <div className="ag-input-group">
             <label className="ag-label">Registration Number</label>
-            <input
-              className="ag-input"
-              type="text"
-              placeholder="e.g. WB 02 AB 1234"
-              value={vPending ? '' : vNumber}
-              onChange={(e) => setVNumber(e.target.value.toUpperCase())}
-              disabled={vPending}
-              style={vPending ? { opacity: 0.5, cursor: 'not-allowed' } : undefined}
-            />
+            <div style={{ display: 'flex', gap: '.5rem', alignItems: 'stretch' }}>
+              <input
+                className="ag-input"
+                type="text"
+                placeholder="e.g. WB 02 AB 1234"
+                value={vPending ? '' : vNumber}
+                onChange={(e) => setVNumber(e.target.value.toUpperCase())}
+                disabled={vPending}
+                style={{ flex: 1, ...(vPending ? { opacity: 0.5, cursor: 'not-allowed' } : {}) }}
+              />
+              <label className="btn-ag plasma sm" style={{ flexShrink: 0, cursor: vPending || vScanBusy ? 'not-allowed' : 'pointer', opacity: vPending || vScanBusy ? 0.5 : 1 }}>
+                {vScanBusy ? <span className="spinner-border-sm" /> : <i className="bi bi-camera" />}
+                <input type="file" accept="image/*" capture="environment" onChange={scanVehiclePlate} disabled={vPending || vScanBusy} style={{ display: 'none' }} />
+              </label>
+            </div>
             <label className="ag-check-row">
               <input type="checkbox" checked={vPending} onChange={(e) => setVPending(e.target.checked)} />
               <span>Registration Pending (New Vehicle)</span>

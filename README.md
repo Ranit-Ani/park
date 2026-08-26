@@ -103,7 +103,7 @@ git push -u origin main
 | Region | closest to you |
 | Branch | main |
 | Root Directory | *(leave blank — repo root)* |
-| Build Command | `cd frontend && npm install --include=dev && npm run build && cd ../backend && npm install` |
+| Build Command | `cd frontend && npm install --include=dev && npm run build && cd ../backend && npm install && cd ../ai && pip install --upgrade pip --break-system-packages && pip install --break-system-packages -r requirements.txt && python3 dataset/build_dataset.py && python3 training/train.py` |
 | Start Command | `node backend/server.js` |
 | Instance Type | Free (or paid, as needed) |
 

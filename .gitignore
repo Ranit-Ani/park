@@ -2,10 +2,6 @@
 node_modules/
 backend/node_modules/
 
-# Tesseract OCR language data (downloaded at runtime, not part of source)
-backend/*.traineddata
-*.traineddata
-
 # Environment variables — NEVER commit
 backend/.env
 .env

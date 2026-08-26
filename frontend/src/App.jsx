@@ -1,6 +1,7 @@
 import { BrowserRouter, Routes, Route } from 'react-router-dom';
 import { AuthProvider } from './context/AuthContext';
 import RequireAuth from './components/RequireAuth';
+import CursorEffect from './components/CursorEffect';
 import ToastHost from './components/ToastHost';
 
 import Landing from './pages/Landing';
@@ -27,6 +28,7 @@ export default function App() {
   return (
     <BrowserRouter>
       <AuthProvider>
+        <CursorEffect />
         <ToastHost />
         <Routes>
           <Route path="/" element={<Landing />} />

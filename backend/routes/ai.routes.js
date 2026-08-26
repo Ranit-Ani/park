@@ -17,5 +17,6 @@ const aiLimiter = rateLimit({
 router.use(protect, aiLimiter);
 
 router.post('/chat', ai.chat);
+router.post('/scan-plate', ai.scanPlate);
 
 module.exports = router;
