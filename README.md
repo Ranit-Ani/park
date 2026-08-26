@@ -132,6 +132,31 @@ git push -u origin main
 
 ---
 
+## 📱 Building the Android APK (Capacitor)
+
+The frontend is shared between the Render web deploy and the Capacitor
+Android app, but they need **different builds**, because a Capacitor app has
+no backend at its own origin (`capacitor://localhost`):
+
+| Build target | `frontend/.env.production`? | API calls go to |
+|---|---|---|
+| Render web deploy | Do **not** create this file | relative `/api` → same origin, works automatically |
+| Capacitor Android APK | Copy `frontend/.env.production.example` → `.env.production` and set `VITE_API_BASE_URL` to your live Render URL | absolute URL, e.g. `https://your-app.onrender.com/api` |
+
+Steps for the APK build:
+1. `cp frontend/.env.production.example frontend/.env.production` and fill in `VITE_API_BASE_URL=https://your-app.onrender.com`
+2. `cd frontend && npm run build` — this produces the `dist/` folder Capacitor should use as its `webDir`
+3. `npx cap sync android` (run from wherever your Capacitor project lives), then rebuild/reinstall the APK in Android Studio
+4. On the backend, make sure `CORS_ORIGIN` includes the app's WebView origin, not just the Render URL:
+   `CORS_ORIGIN=https://your-app.onrender.com,capacitor://localhost,https://localhost`
+   (use `https://localhost` too if your `capacitor.config` sets `androidScheme: 'https'`) — then redeploy the backend.
+
+If you skip step 1, the APK will silently fall back to relative `/api`
+requests, which resolve to nowhere inside the app — this is why login and
+other backend calls fail in the APK even though the Render web app works.
+
+---
+
 ## 👤 Roles
 
 | Role | Access |

@@ -41,7 +41,28 @@ app.use(helmet({
   crossOriginEmbedderPolicy: false,
 }));
 app.use(xssClean());
-app.use(cors({ origin: process.env.CORS_ORIGIN || '*', credentials: true }));
+
+// CORS_ORIGIN can be a comma-separated list, e.g.:
+//   https://your-app.onrender.com,capacitor://localhost,https://localhost
+// The last two cover the Android app's WebView origin (Capacitor loads the
+// bundled frontend from capacitor://localhost, or https://localhost with
+// androidScheme: 'https'). Requests with no Origin header at all (some
+// native HTTP clients omit it) are also allowed through, since they can't
+// be spoofed via a browser the way a forged Origin header could be.
+const allowedOrigins = (process.env.CORS_ORIGIN || '*')
+  .split(',')
+  .map((o) => o.trim())
+  .filter(Boolean);
+
+app.use(cors({
+  origin: (origin, callback) => {
+    if (!origin || allowedOrigins.includes('*') || allowedOrigins.includes(origin)) {
+      return callback(null, true);
+    }
+    return callback(new Error('Not allowed by CORS: ' + origin));
+  },
+  credentials: true,
+}));
 
 // Rate limiting
 const limiter = rateLimit({

@@ -1,8 +1,22 @@
 // ─── API client ──────────────────────────────────────────────────
 // Mirrors the original vanilla apiRequest() from js/app.js exactly:
 // same base URL, same auth header, same 401 handling.
+//
+// On Render, frontend + backend are served from the same origin, so a
+// relative '/api' path works. But when this same frontend is bundled into
+// the Capacitor Android app, the app is loaded from `capacitor://localhost`
+// (or `https://localhost`) — there is no backend at that origin, so a
+// relative path resolves to nowhere and every request fails.
+//
+// VITE_API_BASE_URL lets a build target an absolute backend URL instead.
+// Leave it unset for the normal web build (keeps the relative '/api'
+// behavior); set it to your Render URL when building the frontend for the
+// Capacitor app. See frontend/.env.production.example.
+const API_ROOT = import.meta.env.VITE_API_BASE_URL
+  ? import.meta.env.VITE_API_BASE_URL.replace(/\/+$/, '')
+  : '';
 
-export const API_BASE = '/api';
+export const API_BASE = API_ROOT + '/api';
 
 // localStorage is used here (not sessionStorage) so the session survives
 // closing the tab/browser and reopening it, and is shared across tabs.

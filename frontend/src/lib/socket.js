@@ -1,14 +1,19 @@
 import { io } from 'socket.io-client';
 import { getUser } from './api';
 
-// One shared socket for the whole app. Since backend + frontend are served
-// from the same Render Web Service, no URL/CORS config is needed here —
-// io() with no args connects to the same origin the page was loaded from.
+// One shared socket for the whole app. On Render, backend + frontend are
+// served from the same origin, so io() with no URL connects to the page's
+// own origin. Inside the Capacitor Android app the page is loaded from
+// capacitor://localhost (no backend there), so we need to point the socket
+// at the real backend explicitly via VITE_API_BASE_URL — same variable used
+// by api.js. Leave it unset for the web build to keep the old behavior.
+const SOCKET_URL = import.meta.env.VITE_API_BASE_URL || undefined;
+
 let socket = null;
 
 export function getSocket() {
   if (!socket) {
-    socket = io({
+    socket = io(SOCKET_URL, {
       autoConnect: true,
       transports: ['websocket', 'polling'],
     });
