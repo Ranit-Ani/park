@@ -14,7 +14,7 @@ class AdminService {
       ParkingSlot.getSlotStats(),
       Booking.getRevenue(),
       Booking.countDocuments({ status: { $in: ['Booked', 'Active'] } }),
-      User.countDocuments({ role: 'user' }),
+      User.countDocuments({ role: 'user', isEmailVerified: true }),
     ]);
 
     const occupancyRate =
@@ -43,9 +43,13 @@ class AdminService {
   // ─── User Management ──────────────────────────────────────────────────────────
   async getAllUsers(page = 1, limit = 20) {
     const skip = (page - 1) * limit;
+    // Only show accounts that actually completed OTP verification.
+    // Records created by /register/initiate but never verified are
+    // pending signups, not real users, and should not appear here.
+    const filter = { isEmailVerified: true };
     const [users, total] = await Promise.all([
-      User.find().select('-password').sort({ createdAt: -1 }).skip(skip).limit(limit),
-      User.countDocuments(),
+      User.find(filter).select('-password').sort({ createdAt: -1 }).skip(skip).limit(limit),
+      User.countDocuments(filter),
     ]);
     return { users, total, page, pages: Math.ceil(total / limit) };
   }

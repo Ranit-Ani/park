@@ -4,7 +4,7 @@ import { useAuth } from '../context/AuthContext';
 
 const NAV = {
   user: {
-    sub: 'Student Portal',
+    sub: 'User Portal',
     home: '/user/dashboard',
     sections: [
       {
@@ -70,7 +70,7 @@ export default function Sidebar({ open, onNavigate }) {
             <i className={`bi ${isAdmin ? 'bi-shield-lock-fill' : 'bi-p-square-fill'}`} />
           </div>
           <div>
-            <div className="brand-text">AG PARKING</div>
+            <div className="brand-text">CAR PARKING</div>
             <div className="brand-sub">{cfg.sub}</div>
           </div>
         </NavLink>

@@ -30,12 +30,10 @@ function RoleTable({ title, icon, rows, curUser, onRoleChange, onToggle, emptyTe
               <tr key={u._id}>
                 <td>
                   <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem' }}>
-                    <div style={{ width: 32, height: 32, borderRadius: 8, background: 'linear-gradient(135deg,var(--neon-blue),var(--neon-purple))', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 700, fontSize: '0.85rem', flexShrink: 0, position: 'relative', overflow: 'hidden' }}>
-                      {u.profilePhoto ? (
-                        <img src={u.profilePhoto} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover', position: 'absolute', inset: 0, borderRadius: 'inherit' }} />
-                      ) : (
-                        u.name.charAt(0).toUpperCase()
-                      )}
+                    {/* Admins intentionally cannot view user/staff profile photos —
+                        always show the initial, regardless of whether a photo exists. */}
+                    <div style={{ width: 32, height: 32, borderRadius: 8, background: 'linear-gradient(135deg,var(--neon-blue),var(--neon-purple))', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 700, fontSize: '0.85rem', flexShrink: 0 }}>
+                      {u.name.charAt(0).toUpperCase()}
                     </div>
                     <strong style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{u.name}</strong>
                   </div>
