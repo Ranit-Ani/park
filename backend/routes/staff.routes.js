@@ -1,15 +1,14 @@
-const express = require('express');
-const router = express.Router();
-const staffController = require('../controllers/staff.controller');
-const { protect, authorize } = require('../middleware/auth.middleware');
-
-router.use(protect);
-router.use(authorize('staff', 'admin'));
-
-router.get('/bookings', staffController.getActiveBookings);
-router.get('/bookings/all', staffController.getAllBookings);
-router.post('/checkin/:bookingId', staffController.checkIn);
-router.post('/checkout/:bookingId', staffController.checkOut);
-router.post('/cancel/:bookingId', staffController.cancelBooking);
-
-module.exports = router;
+// File: backend/routes/staff.routes.js
+// Purpose: Express router: maps URL paths and HTTP methods to controllers, applying
+// auth/validation middleware.
+// Routes:
+//   - GET /bookings
+//   - GET /bookings/all
+//   - GET /stats
+//   - POST /checkin/:bookingId
+//   - POST /checkout/:bookingId
+//   - POST /cancel/:bookingId
+//   - POST /qr/verify
+//   - POST /qr/checkin
+//
+// NOTE: Source code intentionally removed. Implementation goes here.

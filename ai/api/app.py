@@ -1,72 +1,13 @@
-"""
-Small Flask API that wraps prediction/predict.py so the Node.js backend can
-call the model over HTTP instead of importing Python directly.
-
-Run:
-    python api/app.py
-Listens on PORT (default 5001).
-
-Endpoints:
-    GET  /health            -> { status, model_loaded }
-    POST /predict            body: { "text": "how do i cancel a booking" }
-                              -> { success, data: { intent, confidence, ... } }
-"""
-import os
-import sys
-from pathlib import Path
-
-from flask import Flask, request, jsonify
-
-AI_ROOT = Path(__file__).resolve().parent.parent
-sys.path.insert(0, str(AI_ROOT))
-from prediction.predict import predict_intent, ModelNotTrainedError  # noqa: E402
-
-app = Flask(__name__)
-
-# ─── Warm-up ────────────────────────────────────────────────────────────────
-# predict_intent() lazily unpickles the vectorizer + classifier on its first
-# call, which pulls in scikit-learn's class machinery and takes ~4-5s. If we
-# let that happen on the user's first real chat message, the app *looks*
-# frozen for several seconds. Instead we pay that cost once here, at process
-# boot, while Node is still starting up MongoDB etc — so by the time anyone
-# actually opens the chat widget, prediction is already fast (~1ms).
-try:
-    predict_intent("warm up")
-    print("[ai] model warmed up and ready.", flush=True)
-except ModelNotTrainedError:
-    print("[ai] model not trained yet — run training/train.py.", flush=True)
-
-# Restrict to local calls from the Node backend only. In production these
-# two processes run on the same host/container, so this API is never
-# exposed publicly — see README for the deployment note.
-
-
-@app.route("/health", methods=["GET"])
-def health():
-    try:
-        # Cheap way to confirm the model is loadable without predicting.
-        predict_intent("health check ping")
-        return jsonify({"status": "ok", "model_loaded": True})
-    except ModelNotTrainedError as e:
-        return jsonify({"status": "model_not_trained", "model_loaded": False, "error": str(e)}), 503
-
-
-@app.route("/predict", methods=["POST"])
-def predict():
-    body = request.get_json(silent=True) or {}
-    text = (body.get("text") or "").strip()
-    if not text:
-        return jsonify({"success": False, "message": "text is required."}), 400
-
-    try:
-        result = predict_intent(text)
-        return jsonify({"success": True, "data": result})
-    except ModelNotTrainedError as e:
-        return jsonify({"success": False, "message": str(e)}), 503
-    except Exception as e:  # noqa: BLE001
-        return jsonify({"success": False, "message": f"Prediction failed: {e}"}), 500
-
-
-if __name__ == "__main__":
-    port = int(os.environ.get("AI_API_PORT", 5001))
-    app.run(host="127.0.0.1", port=port)
+# File: ai/api/app.py
+# Purpose: Small Flask API wrapping prediction/predict.py so the Node backend can call the
+# model over HTTP. Endpoints: GET /health, POST /predict.
+# Original description: Small Flask API that wraps prediction/predict.py so the Node.js
+# backend can call the model over HTTP instead of importing Python directly. Run: python
+# api/app.py Listens on PORT (default 5001). Endpoints: GET /health -> { status,
+# model_loaded } POST /predict body: { "text": "how do i cancel a booking" } -> { success,
+# data: { intent, confidence, ... } }
+# Contains:
+#   - health
+#   - predict
+#
+# NOTE: Source code intentionally removed. Implementation goes here.

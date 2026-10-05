@@ -1,10 +1,4 @@
-import { StrictMode } from 'react'
-import { createRoot } from 'react-dom/client'
-import './index.css'
-import App from './App.jsx'
-
-createRoot(document.getElementById('root')).render(
-  <StrictMode>
-    <App />
-  </StrictMode>,
-)
+// File: frontend/src/main.jsx
+// Purpose: React entry point: renders <App /> into #root and imports global styles.
+//
+// NOTE: Source code intentionally removed. Implementation goes here.

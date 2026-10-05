@@ -1,25 +1,25 @@
-const express = require('express');
-const router = express.Router();
-const adminController = require('../controllers/admin.controller');
-const { protect, authorize } = require('../middleware/auth.middleware');
-const { slotValidator } = require('../middleware/validation.middleware');
-
-router.use(protect);
-router.use(authorize('admin'));
-
-// Dashboard & Revenue
-router.get('/dashboard', adminController.getDashboard);
-router.get('/revenue', adminController.getRevenue);
-
-// User Management
-router.get('/users', adminController.getAllUsers);
-router.put('/users/:id/role', adminController.updateUserRole);
-router.put('/users/:id/toggle', adminController.toggleUserStatus);
-
-// Slot Management
-router.post('/slots', slotValidator, adminController.createSlot);
-router.put('/slots/:id', adminController.updateSlot);
-router.delete('/slots/:id', adminController.deleteSlot);
-router.put('/slots/:id/pricing', adminController.updatePricing);
-
-module.exports = router;
+// File: backend/routes/admin.routes.js
+// Purpose: Express router: maps URL paths and HTTP methods to controllers, applying
+// auth/validation middleware.
+// Routes:
+//   - GET /dashboard
+//   - GET /revenue
+//   - GET /users
+//   - PUT /users/:id/role
+//   - PUT /users/:id/toggle
+//   - POST /slots
+//   - PUT /slots/:id
+//   - DELETE /slots/:id
+//   - PUT /slots/:id/pricing
+//   - GET /locations
+//   - GET /locations/overview
+//   - POST /locations
+//   - PUT /locations/:id
+//   - DELETE /locations/:id
+//   - GET /locations/:id/detail
+//   - GET /locations/:id/staff
+//   - POST /locations/:id/staff
+//   - PUT /locations/:id/staff/:staffId
+//   - DELETE /locations/:id/staff/:staffId
+//
+// NOTE: Source code intentionally removed. Implementation goes here.

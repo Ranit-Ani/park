@@ -1,13 +1,5 @@
-services:
-  - type: web
-    name: campus-parking
-    env: node
-    region: singapore
-    plan: free
-    buildCommand: cd frontend && npm install --include=dev && npm run build && cd ../backend && npm install && cd ../ai && pip install --upgrade pip --break-system-packages && pip install --break-system-packages -r requirements.txt && python3 dataset/build_dataset.py && python3 training/train.py
-    startCommand: node backend/server.js
-    envVars:
-      - key: NODE_ENV
-        value: production
-      - key: AI_API_URL
-        value: http://127.0.0.1:5001
+# File: render.yaml
+# Purpose: Render.com deployment blueprint: web service config, build command, start
+# command and environment variables.
+#
+# NOTE: Source code intentionally removed. Implementation goes here.

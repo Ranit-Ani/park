@@ -11,10 +11,10 @@ Logistic Regression classifier trained on our own labeled dataset.
 1. A user message hits the Node backend (`POST /api/ai/chat`).
 2. The backend forwards the raw text to this Python service's `/predict`
    endpoint.
-3. The model classifies the message into one of 21 intents (e.g.
-   `check_availability`, `cancellation_policy`, `revenue_report`) with a
-   confidence score. Below a confidence threshold, it falls back to
-   `unknown`.
+3. The model classifies the message into one of 30 intents (e.g.
+   `check_availability`, `cancellation_policy`, `revenue_report`,
+   `location_list`) with a confidence score. Below a confidence threshold,
+   it falls back to `unknown`.
 4. Back in Node (`backend/services/LocalAIService.js`):
    - **Knowledge intents** (policy/how-to questions) return a canned,
      hand-written answer from `config/intents.json`.
@@ -31,6 +31,34 @@ This is a classifier, not a text generator — replies for a given intent are
 templated, not freely composed. `scan-plate` (reading a plate from a photo)
 needs a vision model, which this text classifier isn't, so it returns a
 clear "not available, please type it" response instead of failing.
+
+### Multi-location awareness
+
+The classifier itself has no concept of "which location" — it only predicts
+an intent tag, and location names are per-deployment data, not fixed
+vocabulary it can be trained on ahead of time. Location scoping instead
+happens in `LocalAIService.js`, right after classification:
+
+- **Staff are always locked to their own assigned location.** `chat()`
+  reads `user.locationId` (set on the account by an admin, same field every
+  other staff-facing endpoint already trusts) and passes it as `ctx.locationId`
+  into `aiTools.runTool`, which uses it to filter slots/occupancy for
+  `check_availability` and `occupancy_insights` — overriding anything the
+  staff member typed. Staff never see other sites' data through the
+  assistant, same as everywhere else in the app.
+- **Users and admins can mention a location by name** ("is anything free at
+  Block C?", "revenue for the Downtown Lot"). `resolveLocationFromText()`
+  does a cheap, cached substring match against active `ParkingLocation`
+  names and, if one matches, passes it as `args.locationId` /
+  `args.locationName` to the tool. No match just means the tool answers
+  system-wide, exactly as before this feature existed.
+- **`get_locations`** (the `location_list` intent) lists every active
+  parking location with its live available/total slot counts and rate
+  range — available to every role, so a user can ask "what locations do you
+  have?" without needing GPS/Nearby Parking.
+- **`get_revenue_report`** (admin-only) returns the system-wide total plus a
+  per-location breakdown by default, or a single location's figures when one
+  was resolved from the message.
 
 ---
 
@@ -77,7 +105,7 @@ python training/train.py
 python training/evaluate.py
 ```
 
-Current held-out test accuracy: **~93%** across 21 intents.
+Current held-out test accuracy: **~90%** across 30 intents.
 
 ## Running the API standalone
 

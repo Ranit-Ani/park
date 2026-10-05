@@ -1,15 +1,12 @@
-const express = require('express');
-const router = express.Router();
-const bookingController = require('../controllers/booking.controller');
-const { protect, authorize } = require('../middleware/auth.middleware');
-const { bookingValidator } = require('../middleware/validation.middleware');
-
-router.use(protect);
-
-router.post('/', authorize('user', 'admin'), bookingValidator, bookingController.createBooking);
-router.get('/', bookingController.getMyBookings);
-router.get('/:id', bookingController.getBookingById);
-router.get('/:id/receipt', bookingController.downloadReceipt);
-router.delete('/:id', authorize('user', 'admin'), bookingController.cancelBooking);
-
-module.exports = router;
+// File: backend/routes/booking.routes.js
+// Purpose: Express router: maps URL paths and HTTP methods to controllers, applying
+// auth/validation middleware.
+// Routes:
+//   - POST /
+//   - GET /
+//   - GET /:id
+//   - GET /:id/receipt
+//   - GET /:id/qrcode
+//   - DELETE /:id
+//
+// NOTE: Source code intentionally removed. Implementation goes here.

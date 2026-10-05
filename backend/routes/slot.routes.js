@@ -1,14 +1,10 @@
-const express = require('express');
-const router = express.Router();
-const slotController = require('../controllers/slot.controller');
-const { protect } = require('../middleware/auth.middleware');
-
-router.get('/stats', slotController.getSlotStats);     // Stats summary
-// All slot routes require authentication
-router.use(protect);
-
-router.get('/', slotController.getAvailableSlots);     // Available slots only
-router.get('/all', slotController.getAllSlots);         // All slots with status
-router.get('/:id', slotController.getSlotById);        // Single slot
-
-module.exports = router;
+// File: backend/routes/slot.routes.js
+// Purpose: Express router: maps URL paths and HTTP methods to controllers, applying
+// auth/validation middleware.
+// Routes:
+//   - GET /stats
+//   - GET /
+//   - GET /all
+//   - GET /:id
+//
+// NOTE: Source code intentionally removed. Implementation goes here.

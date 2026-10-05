@@ -1,0 +1,8 @@
+{
+  "_comment": [
+    "File: frontend/capacitor.config.json",
+    "Purpose: Capacitor config for the Android app: appId, appName and web build directory.",
+    "",
+    "NOTE: Source code intentionally removed. Implementation goes here."
+  ]
+}

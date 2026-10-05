@@ -1,12 +1,10 @@
 {
-  "name": "campus-parking-system",
-  "version": "1.0.0",
-  "description": "Smart Campus Car Parking System",
-  "scripts": {
-    "start": "node backend/server.js",
-    "build": "cd frontend && npm install --include=dev && npm run build && cd ../backend && npm install && cd ../ai && pip install --upgrade pip --break-system-packages && pip install --break-system-packages -r requirements.txt && python3 dataset/build_dataset.py && python3 training/train.py"
-  },
-  "engines": {
-    "node": ">=18.0.0"
-  }
+  "_comment": [
+    "File: package.json",
+    "Purpose: Root npm manifest: name/version, engines, and the start/build scripts used for",
+    "deployment (builds frontend, installs backend, trains the AI model, starts",
+    "backend/server.js).",
+    "",
+    "NOTE: Source code intentionally removed. Implementation goes here."
+  ]
 }

@@ -1,27 +1,21 @@
-const express = require('express');
-const router = express.Router();
-const auth = require('../controllers/auth.controller');
-const { protect } = require('../middleware/auth.middleware');
-
-// Public routes
-router.post('/register/initiate', auth.initiateRegister);
-router.post('/register/verify',   auth.verifyRegister);
-router.post('/login',             auth.login);
-router.post('/forgot-password',   auth.forgotPassword);
-router.post('/reset-password',    auth.resetPassword);
-
-// Protected routes
-router.get('/me',                           protect, auth.getMe);
-router.put('/profile',                      protect, auth.updateProfile);
-router.put('/change-password',             protect, auth.changePassword);
-router.post('/email-change/initiate',      protect, auth.initiateEmailChange);
-router.post('/email-change/verify',        protect, auth.verifyEmailChange);
-router.delete('/account',                  protect, auth.deleteAccount);
-
-// Saved vehicles (Rule 3)
-router.get('/vehicles',                    protect, auth.getVehicles);
-router.post('/vehicles',                   protect, auth.addVehicle);
-router.put('/vehicles/:vehicleId',         protect, auth.updateVehicle);
-router.delete('/vehicles/:vehicleId',      protect, auth.deleteVehicle);
-
-module.exports = router;
+// File: backend/routes/auth.routes.js
+// Purpose: Express router: maps URL paths and HTTP methods to controllers, applying
+// auth/validation middleware.
+// Routes:
+//   - POST /register/initiate
+//   - POST /register/verify
+//   - POST /login
+//   - POST /forgot-password
+//   - POST /reset-password
+//   - GET /me
+//   - PUT /profile
+//   - PUT /change-password
+//   - POST /email-change/initiate
+//   - POST /email-change/verify
+//   - DELETE /account
+//   - GET /vehicles
+//   - POST /vehicles
+//   - PUT /vehicles/:vehicleId
+//   - DELETE /vehicles/:vehicleId
+//
+// NOTE: Source code intentionally removed. Implementation goes here.
